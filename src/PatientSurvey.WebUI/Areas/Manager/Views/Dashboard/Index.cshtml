@@ -6,7 +6,12 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Manager Paneli</h1>
+        <div>
+            <span class="eyebrow">Operasyon ozeti</span>
+            <h1>Manager Paneli</h1>
+            <p>Anket linklerini uret, gelen sonuclari takip et ve raporlari incele.</p>
+        </div>
+        <a class="primary-button" asp-area="Manager" asp-controller="Tokens" asp-action="Create">Yeni Link</a>
     </div>
 
     <div class="stat-grid">
@@ -19,8 +24,8 @@
     </div>
 
     <div class="admin-grid">
-        <a asp-area="Manager" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
-        <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuclar</a>
-        <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
+        <a asp-area="Manager" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Hazir ve kullanilmis baglantilar</span></a>
+        <a asp-area="Manager" asp-controller="Results" asp-action="Index"><strong>Sonuclar</strong><span>Gonderilen anket yanitlari</span></a>
+        <a asp-area="Manager" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Ortalama puan ve bolum kirilimlari</span></a>
     </div>
 </section>

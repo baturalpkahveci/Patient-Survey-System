@@ -64,6 +64,7 @@ public sealed class SurveyController : Controller
         return RedirectToAction(nameof(ThankYou));
     }
 
+    [HttpGet("Survey/ThankYou")]
     public IActionResult ThankYou()
     {
         return View();

@@ -6,7 +6,12 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Admin Paneli</h1>
+        <div>
+            <span class="eyebrow">Genel bakis</span>
+            <h1>Admin Paneli</h1>
+            <p>Anket kurulumunu, kullanicilari, linkleri ve raporlari buradan yonetebilirsin.</p>
+        </div>
+        <a class="primary-button" asp-area="Admin" asp-controller="Surveys" asp-action="Create">Yeni Anket</a>
     </div>
 
     <div class="stat-grid">
@@ -19,12 +24,12 @@
     </div>
 
     <div class="admin-grid">
-        <a asp-area="Admin" asp-controller="Surveys" asp-action="Index">Anketler</a>
-        <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
-        <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
-        <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuclar</a>
-        <a asp-area="Admin" asp-controller="Reports" asp-action="Index">Raporlar</a>
-        <a asp-area="Admin" asp-controller="Departments" asp-action="Index">Bolumler</a>
-        <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanicilar</a>
+        <a asp-area="Admin" asp-controller="Surveys" asp-action="Index"><strong>Anketler</strong><span>Anket durumlarini ve iceriklerini yonet</span></a>
+        <a asp-area="Admin" asp-controller="Questions" asp-action="Index"><strong>Sorular</strong><span>Puan, metin ve evet/hayir sorulari</span></a>
+        <a asp-area="Admin" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Tek kullanimlik hasta baglantilari</span></a>
+        <a asp-area="Admin" asp-controller="Results" asp-action="Index"><strong>Sonuclar</strong><span>Gonderilen yanitlari incele</span></a>
+        <a asp-area="Admin" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Bolum ve anket performansi</span></a>
+        <a asp-area="Admin" asp-controller="Departments" asp-action="Index"><strong>Bolumler</strong><span>Hizmet birimlerini duzenle</span></a>
+        <a asp-area="Admin" asp-controller="Users" asp-action="Index"><strong>Kullanicilar</strong><span>Admin ve manager hesaplari</span></a>
     </div>
 </section>

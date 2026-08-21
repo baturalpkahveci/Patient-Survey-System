@@ -34,7 +34,8 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var response = await client.GetAsync("/Admin/Dashboard");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
     }
 
     [Fact]
@@ -45,7 +46,8 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var response = await client.GetAsync("/Manager/Dashboard");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
     }
 
     [Theory]

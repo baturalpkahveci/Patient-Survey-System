@@ -1,3 +1,8 @@
+@{
+    var currentArea = ViewContext.RouteData.Values["area"]?.ToString() ?? string.Empty;
+    var isAdminArea = currentArea == "Admin";
+    var isManagerArea = currentArea == "Manager";
+}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -12,17 +17,23 @@
 <body>
     <header>
         <nav class="topbar">
-            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">Hasta Memnuniyet Anketi</a>
+            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark">PS</span>
+                <span>
+                    <strong>Hasta Memnuniyet Anketi</strong>
+                    <small>Yonetim ve raporlama sistemi</small>
+                </span>
+            </a>
             <div class="nav-links">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     @if (User.IsInRole("Manager"))
                     {
-                        <a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Manager Paneli</a>
+                        <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Manager Paneli</a>
                     }
                     else
                     {
-                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Paneli</a>
+                        <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Paneli</a>
                     }
                     <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
                         <button type="submit" class="link-button">Cikis</button>
@@ -34,6 +45,28 @@
                 }
             </div>
         </nav>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="subnav">
+                @if (User.IsInRole("Manager"))
+                {
+                    <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Ozet</a>
+                    <a asp-area="Manager" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
+                    <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuclar</a>
+                    <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
+                }
+                else
+                {
+                    <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Ozet</a>
+                    <a asp-area="Admin" asp-controller="Surveys" asp-action="Index">Anketler</a>
+                    <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
+                    <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Linkler</a>
+                    <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuclar</a>
+                    <a asp-area="Admin" asp-controller="Reports" asp-action="Index">Raporlar</a>
+                    <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanicilar</a>
+                }
+            </div>
+        }
     </header>
 
     <div class="page-shell">

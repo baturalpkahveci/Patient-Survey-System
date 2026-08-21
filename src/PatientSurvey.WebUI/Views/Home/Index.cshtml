@@ -1,8 +1,41 @@
 @{
     ViewData["Title"] = "Ana Sayfa";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isManager = User.IsInRole("Manager");
 }
 
-<div class="empty-state">
-    <h1>Hasta Memnuniyet Anketi</h1>
-    <p>Anket erişimi tek kullanımlık bağlantı ile sağlanır.</p>
-</div>
+<section class="home-dashboard">
+    <div class="home-intro">
+        <span class="eyebrow">Hasta deneyimi takibi</span>
+        <h1>Hasta Memnuniyet Anketi</h1>
+        <p>Anketler tek kullanımlık bağlantılarla paylaşılır; cevaplar bölüm bazında raporlanır ve yönetim panelinden takip edilir.</p>
+        <div class="home-actions">
+            @if (isAuthenticated)
+            {
+                <a class="primary-button" asp-area="@(isManager ? "Manager" : "Admin")" asp-controller="Dashboard" asp-action="Index">Panele Git</a>
+            }
+            else
+            {
+                <a class="primary-button" asp-controller="Account" asp-action="Login">Yonetim Girisi</a>
+            }
+        </div>
+    </div>
+
+    <div class="workflow-strip" aria-label="Uygulama akis adimlari">
+        <div>
+            <span>1</span>
+            <strong>Anketi hazirla</strong>
+            <p>Bolumleri, sorulari ve aktif anketleri duzenle.</p>
+        </div>
+        <div>
+            <span>2</span>
+            <strong>Link uret</strong>
+            <p>Hasta icin tek kullanimlik ve takip edilebilir baglanti olustur.</p>
+        </div>
+        <div>
+            <span>3</span>
+            <strong>Sonuclari izle</strong>
+            <p>Cevaplari, ortalama puanlari ve bolum performansini raporla.</p>
+        </div>
+    </div>
+</section>

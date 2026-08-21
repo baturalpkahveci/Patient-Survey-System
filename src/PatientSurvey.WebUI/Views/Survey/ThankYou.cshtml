@@ -1,8 +1,11 @@
 @{
-    ViewData["Title"] = "Teşekkürler";
+    ViewData["Title"] = "Anket Gönderildi";
 }
 
-<section class="message-panel">
-    <h1>Teşekkür ederiz.</h1>
-    <p>Anket yanıtınız başarıyla kaydedildi.</p>
+<section class="success-panel" role="status" aria-live="polite">
+    <div class="success-mark" aria-hidden="true">✓</div>
+    <span class="eyebrow">Kayit tamamlandi</span>
+    <h1>Anketiniz basariyla gonderildi</h1>
+    <p>Yanıtınız sisteme kaydedildi. Katkınız için teşekkür ederiz.</p>
+    <a class="secondary-button" asp-controller="Home" asp-action="Index">Ana Sayfaya Don</a>
 </section>
