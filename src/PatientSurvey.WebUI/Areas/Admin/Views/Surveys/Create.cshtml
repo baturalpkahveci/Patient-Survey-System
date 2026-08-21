@@ -1,0 +1,36 @@
+@model CreateSurveyViewModel
+
+@{
+    ViewData["Title"] = "Yeni Anket";
+}
+
+<section class="admin-page">
+    <h1>Yeni Anket</h1>
+
+    <form asp-action="Create" method="post" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="field-block">
+            <label asp-for="Title">Baslik</label>
+            <input asp-for="Title" />
+            <span asp-validation-for="Title" class="field-validation"></span>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="Description">Aciklama</label>
+            <textarea asp-for="Description" rows="4"></textarea>
+        </div>
+
+        <label class="check-row">
+            <input asp-for="IsActive" />
+            <span>Aktif</span>
+        </label>
+
+        <button type="submit" class="primary-button">Kaydet ve Soru Ekle</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

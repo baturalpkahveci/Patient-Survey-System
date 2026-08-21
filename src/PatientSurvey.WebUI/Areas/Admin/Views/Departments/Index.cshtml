@@ -1,0 +1,46 @@
+@model DepartmentIndexViewModel
+
+@{
+    ViewData["Title"] = "Bolumler";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Bolumler</h1>
+        <a class="primary-button" asp-action="Create">Yeni Bolum</a>
+    </div>
+
+    @if (Model.Departments.Count == 0)
+    {
+        <p>Henuz bolum yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Bolum</th>
+                    <th>Cevap</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var department in Model.Departments)
+                {
+                    <tr>
+                        <td>@department.Name</td>
+                        <td>@department.ResponseCount</td>
+                        <td>@(department.IsActive ? "Aktif" : "Pasif")</td>
+                        <td>
+                            <form asp-action="Toggle" asp-route-id="@department.Id" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="secondary-button">@(department.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

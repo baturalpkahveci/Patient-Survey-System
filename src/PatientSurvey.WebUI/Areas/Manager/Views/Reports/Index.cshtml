@@ -1,0 +1,59 @@
+@model ReportIndexViewModel
+
+@{
+    ViewData["Title"] = "Raporlar";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Raporlar</h1>
+    </div>
+
+    @if (Model.Reports.Count == 0)
+    {
+        <p>Henuz raporlanacak anket yok.</p>
+    }
+    else
+    {
+        <div class="report-list">
+            @foreach (var report in Model.Reports)
+            {
+                <article class="report-panel">
+                    <div class="admin-heading">
+                        <h2>@report.SurveyTitle</h2>
+                        <span class="status-pill">@(report.IsActive ? "Aktif" : "Pasif")</span>
+                    </div>
+                    <div class="detail-grid">
+                        <div><span>Soru</span><strong>@report.QuestionCount</strong></div>
+                        <div><span>Link</span><strong>@report.TokenCount</strong></div>
+                        <div><span>Cevap</span><strong>@report.ResponseCount</strong></div>
+                        <div><span>Puan Ort.</span><strong>@(report.AverageScore?.ToString("0.00") ?? "-")</strong></div>
+                    </div>
+
+                    @if (report.Departments.Count > 0)
+                    {
+                        <table class="admin-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Bolum</th>
+                                    <th>Cevap</th>
+                                    <th>Puan Ort.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var department in report.Departments)
+                                {
+                                    <tr>
+                                        <td>@department.DepartmentName</td>
+                                        <td>@department.ResponseCount</td>
+                                        <td>@(department.AverageScore?.ToString("0.00") ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>

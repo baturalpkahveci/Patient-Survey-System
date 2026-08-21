@@ -1,0 +1,26 @@
+@model DashboardViewModel
+
+@{
+    ViewData["Title"] = "Manager Paneli";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Manager Paneli</h1>
+    </div>
+
+    <div class="stat-grid">
+        <div class="stat-tile"><span>Anket</span><strong>@Model.Overview.SurveyCount</strong></div>
+        <div class="stat-tile"><span>Aktif Anket</span><strong>@Model.Overview.ActiveSurveyCount</strong></div>
+        <div class="stat-tile"><span>Soru</span><strong>@Model.Overview.QuestionCount</strong></div>
+        <div class="stat-tile"><span>Cevap</span><strong>@Model.Overview.ResponseCount</strong></div>
+        <div class="stat-tile"><span>Link</span><strong>@Model.Overview.TokenCount</strong></div>
+        <div class="stat-tile"><span>Kullanilmamis Link</span><strong>@Model.Overview.UnusedTokenCount</strong></div>
+    </div>
+
+    <div class="admin-grid">
+        <a asp-area="Manager" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
+        <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuclar</a>
+        <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
+    </div>
+</section>

@@ -1,0 +1,50 @@
+@model QuestionIndexViewModel
+
+@{
+    ViewData["Title"] = "Sorular";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Soru Yonetimi</h1>
+        <a class="primary-button" asp-action="Create">Yeni Soru</a>
+    </div>
+
+    @if (Model.Questions.Count == 0)
+    {
+        <p>Henuz soru yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Sira</th>
+                    <th>Soru</th>
+                    <th>Tip</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var question in Model.Questions)
+                {
+                    <tr>
+                        <td>@question.SurveyTitle</td>
+                        <td>@question.DisplayOrder</td>
+                        <td>@question.Text</td>
+                        <td>@question.Type</td>
+                        <td>@(question.IsActive ? "Aktif" : "Pasif")</td>
+                        <td>
+                            <form asp-action="Toggle" asp-route-id="@question.Id" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="secondary-button">@(question.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

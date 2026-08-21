@@ -1,0 +1,44 @@
+@model TokenIndexViewModel
+
+@{
+    ViewData["Title"] = "Anket Linkleri";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Anket Linkleri</h1>
+        <a class="primary-button" asp-action="Create">Yeni Link</a>
+    </div>
+
+    @if (Model.Tokens.Count == 0)
+    {
+        <p>Henuz anket linki yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Link</th>
+                    <th>Olusturma</th>
+                    <th>Son Kullanma</th>
+                    <th>Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var token in Model.Tokens)
+                {
+                    var url = $"{Model.SurveyUrlPrefix}{token.Token}";
+                    <tr>
+                        <td>@token.SurveyTitle</td>
+                        <td><input class="copy-input" value="@url" readonly /></td>
+                        <td>@token.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                        <td>@(token.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                        <td>@(token.HasResponse || token.UsedAtUtc.HasValue ? "Kullanildi" : "Hazir")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

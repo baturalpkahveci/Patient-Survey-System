@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hasta Memnuniyet Anketi</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/survey.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="topbar">
+            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">Hasta Memnuniyet Anketi</a>
+            <div class="nav-links">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    @if (User.IsInRole("Manager"))
+                    {
+                        <a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Manager Paneli</a>
+                    }
+                    else
+                    {
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Paneli</a>
+                    }
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="link-button">Cikis</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-area="" asp-controller="Account" asp-action="Login">Giris</a>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-shell">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer">
+        <span>&copy; 2026 Hasta Memnuniyet Anketi Sistemi</span>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

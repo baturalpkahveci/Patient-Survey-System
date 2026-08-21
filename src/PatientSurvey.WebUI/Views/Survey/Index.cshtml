@@ -1,0 +1,85 @@
+@model SubmitSurveyViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="survey-page">
+    <header class="survey-header">
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p>@Model.Description</p>
+        }
+    </header>
+
+    <form asp-action="Submit" method="post" class="survey-form">
+        @Html.AntiForgeryToken()
+        <input asp-for="Token" type="hidden" />
+        <input asp-for="SurveyId" type="hidden" />
+
+        @if (!string.IsNullOrWhiteSpace(Model.FormError))
+        {
+            <div class="validation-summary">@Model.FormError</div>
+        }
+
+        <div class="field-block">
+            <label asp-for="DepartmentId">Bölüm</label>
+            <select asp-for="DepartmentId">
+                <option value="">Bölüm seçin</option>
+                @foreach (var department in Model.Departments)
+                {
+                    <option value="@department.Id">@department.Name</option>
+                }
+            </select>
+            <span asp-validation-for="DepartmentId" class="field-validation"></span>
+        </div>
+
+        <ol class="question-list">
+            @for (var i = 0; i < Model.Questions.Count; i++)
+            {
+                <li class="question-item">
+                    <input asp-for="Questions[i].Id" type="hidden" />
+                    <div class="question-title">
+                        <span>@Model.Questions[i].Text</span>
+                        @if (Model.Questions[i].IsRequired)
+                        {
+                            <strong>Zorunlu</strong>
+                        }
+                    </div>
+
+                    @if (Model.Questions[i].Type == QuestionType.Score)
+                    {
+                        <div class="score-options">
+                            @for (var score = 1; score <= 5; score++)
+                            {
+                                <label>
+                                    <input type="radio" name="Questions[@i].ScoreValue" value="@score" checked="@(Model.Questions[i].ScoreValue == score)" />
+                                    <span>@score</span>
+                                </label>
+                            }
+                        </div>
+                    }
+                    else if (Model.Questions[i].Type == QuestionType.Text)
+                    {
+                        <textarea name="Questions[@i].TextValue" rows="4">@Model.Questions[i].TextValue</textarea>
+                    }
+                    else if (Model.Questions[i].Type == QuestionType.Boolean)
+                    {
+                        <select name="Questions[@i].BooleanValue">
+                            <option value="">Seçin</option>
+                            <option value="true" selected="@(Model.Questions[i].BooleanValue == true)">Evet</option>
+                            <option value="false" selected="@(Model.Questions[i].BooleanValue == false)">Hayır</option>
+                        </select>
+                    }
+                </li>
+            }
+        </ol>
+
+        <button type="submit" class="primary-button">Gönder</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

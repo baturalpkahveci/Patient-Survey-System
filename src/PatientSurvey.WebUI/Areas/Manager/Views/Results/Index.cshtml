@@ -1,0 +1,44 @@
+@model ResultIndexViewModel
+
+@{
+    ViewData["Title"] = "Sonuclar";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Anket Sonuclari</h1>
+    </div>
+
+    @if (Model.Results.Count == 0)
+    {
+        <p>Henuz cevaplanmis anket yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Bolum</th>
+                    <th>Tarih</th>
+                    <th>Cevap</th>
+                    <th>Ortalama</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var result in Model.Results)
+                {
+                    <tr>
+                        <td>@result.SurveyTitle</td>
+                        <td>@result.DepartmentName</td>
+                        <td>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</td>
+                        <td>@result.AnswerCount</td>
+                        <td>@(result.AverageScore?.ToString("0.00") ?? "-")</td>
+                        <td><a asp-action="Details" asp-route-id="@result.Id">Detay</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

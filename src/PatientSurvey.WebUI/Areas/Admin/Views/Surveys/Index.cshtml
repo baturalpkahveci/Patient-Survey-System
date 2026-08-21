@@ -1,0 +1,58 @@
+@model SurveyIndexViewModel
+
+@{
+    ViewData["Title"] = "Anketler";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Anketler</h1>
+        <a class="primary-button" asp-action="Create">Yeni Anket</a>
+    </div>
+
+    @if (Model.Surveys.Count == 0)
+    {
+        <p>Henuz anket yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Baslik</th>
+                    <th>Soru</th>
+                    <th>Link</th>
+                    <th>Cevap</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var survey in Model.Surveys)
+                {
+                    <tr>
+                        <td>
+                            <strong>@survey.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(survey.Description))
+                            {
+                                <span class="table-note">@survey.Description</span>
+                            }
+                        </td>
+                        <td>@survey.QuestionCount</td>
+                        <td>@survey.TokenCount</td>
+                        <td>@survey.ResponseCount</td>
+                        <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
+                        <td class="table-actions">
+                            <a asp-controller="Questions" asp-action="Create" asp-route-surveyId="@survey.Id">Soru ekle</a>
+                            <a asp-controller="Tokens" asp-action="Create" asp-route-surveyId="@survey.Id">Link uret</a>
+                            <form asp-action="Toggle" asp-route-id="@survey.Id" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="secondary-button">@(survey.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

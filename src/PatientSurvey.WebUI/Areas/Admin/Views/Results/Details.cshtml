@@ -1,0 +1,51 @@
+@model ResultDetailViewModel
+
+@{
+    ViewData["Title"] = "Sonuc Detayi";
+    var result = Model.Result!;
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>@result.SurveyTitle</h1>
+        <a asp-action="Index">Sonuclara don</a>
+    </div>
+
+    <div class="detail-grid">
+        <div><span>Bolum</span><strong>@result.DepartmentName</strong></div>
+        <div><span>Tarih</span><strong>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</strong></div>
+    </div>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Soru</th>
+                <th>Tip</th>
+                <th>Cevap</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var answer in result.Answers)
+            {
+                <tr>
+                    <td>@answer.QuestionText</td>
+                    <td>@answer.QuestionType</td>
+                    <td>@FormatAnswer(answer)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@functions {
+    private static string FormatAnswer(PatientSurvey.Application.DTOs.Response.SurveyResponseAnswerDto answer)
+    {
+        return answer.QuestionType switch
+        {
+            QuestionType.Score => answer.ScoreValue?.ToString() ?? "-",
+            QuestionType.Text => string.IsNullOrWhiteSpace(answer.TextValue) ? "-" : answer.TextValue,
+            QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayir") : "-",
+            _ => "-"
+        };
+    }
+}

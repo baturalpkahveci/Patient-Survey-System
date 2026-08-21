@@ -1,0 +1,32 @@
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Giriş";
+}
+
+<section class="auth-panel">
+    <h1>Yönetim Girişi</h1>
+    <form asp-action="Login" method="post">
+        @Html.AntiForgeryToken()
+        <input asp-for="ReturnUrl" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="field-block">
+            <label asp-for="Username">Kullanıcı adı</label>
+            <input asp-for="Username" autocomplete="username" />
+            <span asp-validation-for="Username" class="field-validation"></span>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="Password">Şifre</label>
+            <input asp-for="Password" autocomplete="current-password" />
+            <span asp-validation-for="Password" class="field-validation"></span>
+        </div>
+
+        <button type="submit" class="primary-button">Giriş Yap</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,46 @@
+@model UserIndexViewModel
+
+@{
+    ViewData["Title"] = "Kullanicilar";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Kullanici Yonetimi</h1>
+        <a class="primary-button" asp-action="Create">Yeni Kullanici</a>
+    </div>
+
+    @if (Model.Users.Count == 0)
+    {
+        <p>Henuz kullanici yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Kullanici adi</th>
+                    <th>Rol</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td>@user.Username</td>
+                        <td>@user.RoleName</td>
+                        <td>@(user.IsActive ? "Aktif" : "Pasif")</td>
+                        <td>
+                            <form asp-action="Toggle" asp-route-id="@user.Id" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="secondary-button">@(user.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

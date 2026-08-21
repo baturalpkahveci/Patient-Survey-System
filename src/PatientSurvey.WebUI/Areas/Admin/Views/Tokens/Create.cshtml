@@ -1,0 +1,38 @@
+@model CreateTokenViewModel
+
+@{
+    ViewData["Title"] = "Yeni Anket Linki";
+}
+
+<section class="admin-page">
+    <h1>Yeni Anket Linki</h1>
+
+    <form asp-action="Create" method="post" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="field-block">
+            <label asp-for="SurveyId">Anket</label>
+            <select asp-for="SurveyId">
+                <option value="">Anket secin</option>
+                @foreach (var survey in Model.Surveys.Where(survey => survey.IsActive))
+                {
+                    <option value="@survey.Id">@survey.Title</option>
+                }
+            </select>
+            <span asp-validation-for="SurveyId" class="field-validation"></span>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="ExpiresAtUtc">Son kullanma tarihi</label>
+            <input asp-for="ExpiresAtUtc" type="datetime-local" />
+            <span asp-validation-for="ExpiresAtUtc" class="field-validation"></span>
+        </div>
+
+        <button type="submit" class="primary-button">Link Uret</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PatientSurvey.Application/PatientSurvey.Application.csproj" />
+    <Project Path="src/PatientSurvey.Domain/PatientSurvey.Domain.csproj" />
+    <Project Path="src/PatientSurvey.Infrastructure/PatientSurvey.Infrastructure.csproj" />
+    <Project Path="src/PatientSurvey.WebUI/PatientSurvey.WebUI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PatientSurvey.IntegrationTests/PatientSurvey.IntegrationTests.csproj" />
+    <Project Path="tests/PatientSurvey.UnitTests/PatientSurvey.UnitTests.csproj" />
+  </Folder>
+</Solution>
