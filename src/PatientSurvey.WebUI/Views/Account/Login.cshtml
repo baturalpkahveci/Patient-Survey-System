@@ -1,4 +1,4 @@
-@model LoginViewModel
+﻿@model LoginViewModel
 
 @{
     ViewData["Title"] = "Giriş";
@@ -6,9 +6,9 @@
 
 <section class="auth-page">
     <div class="auth-copy">
-        <span class="eyebrow">Yetkili erisimi</span>
-        <h1>Yonetim paneline giris yap</h1>
-        <p>Admin kullanicilari tum yapilandirmayi yonetir. Manager kullanicilari link, sonuc ve rapor ekranlarina erisir.</p>
+        <span class="eyebrow">Yetkili erişimi</span>
+        <h1>Yönetim paneline giriş yap</h1>
+        <p>Admin kullanıcıları tüm yapilandirmayi yönetir. Manager kullanıcıları link, sonuc ve rapor ekranlarina erisir.</p>
     </div>
 
     <div class="auth-panel">
@@ -18,18 +18,18 @@
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
             <div class="field-block">
-                <label asp-for="Username">Kullanici adi</label>
+                <label asp-for="Username">Kullanıcı adı</label>
                 <input asp-for="Username" autocomplete="username" />
                 <span asp-validation-for="Username" class="field-validation"></span>
             </div>
 
             <div class="field-block">
-                <label asp-for="Password">Sifre</label>
+                <label asp-for="Password">Şifre</label>
                 <input asp-for="Password" autocomplete="current-password" />
                 <span asp-validation-for="Password" class="field-validation"></span>
             </div>
 
-            <button type="submit" class="primary-button full-width">Giris Yap</button>
+            <button type="submit" class="primary-button full-width">Giriş Yap</button>
         </form>
     </div>
 </section>

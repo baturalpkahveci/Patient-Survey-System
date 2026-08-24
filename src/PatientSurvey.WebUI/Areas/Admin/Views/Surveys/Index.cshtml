@@ -1,4 +1,4 @@
-@model SurveyIndexViewModel
+﻿@model SurveyIndexViewModel
 
 @{
     ViewData["Title"] = "Anketler";
@@ -12,14 +12,14 @@
 
     @if (Model.Surveys.Count == 0)
     {
-        <p>Henuz anket yok.</p>
+        <p>Henüz anket yok.</p>
     }
     else
     {
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Baslik</th>
+                    <th>Başlık</th>
                     <th>Soru</th>
                     <th>Link</th>
                     <th>Cevap</th>
@@ -44,7 +44,7 @@
                         <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
                         <td class="table-actions">
                             <a asp-controller="Questions" asp-action="Create" asp-route-surveyId="@survey.Id">Soru ekle</a>
-                            <a asp-controller="Tokens" asp-action="Create" asp-route-surveyId="@survey.Id">Link uret</a>
+                            <a asp-controller="Tokens" asp-action="Create" asp-route-surveyId="@survey.Id">Link üret</a>
                             <form asp-action="Toggle" asp-route-id="@survey.Id" method="post" class="inline-form">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="secondary-button">@(survey.IsActive ? "Pasif yap" : "Aktif yap")</button>

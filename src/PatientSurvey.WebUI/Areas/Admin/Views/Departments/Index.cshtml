@@ -1,25 +1,25 @@
-@model DepartmentIndexViewModel
+﻿@model DepartmentIndexViewModel
 
 @{
-    ViewData["Title"] = "Bolumler";
+    ViewData["Title"] = "Bölümler";
 }
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Bolumler</h1>
-        <a class="primary-button" asp-action="Create">Yeni Bolum</a>
+        <h1>Bölümler</h1>
+        <a class="primary-button" asp-action="Create">Yeni Bölüm</a>
     </div>
 
     @if (Model.Departments.Count == 0)
     {
-        <p>Henuz bolum yok.</p>
+        <p>Henüz bölüm yok.</p>
     }
     else
     {
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Bolum</th>
+                    <th>Bölüm</th>
                     <th>Cevap</th>
                     <th>Durum</th>
                     <th></th>

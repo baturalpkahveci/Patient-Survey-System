@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.User;
 using PatientSurvey.Application.Services;
@@ -39,7 +39,7 @@ public sealed class UsersController : Controller
     {
         if (!viewModel.RoleId.HasValue)
         {
-            ModelState.AddModelError(nameof(viewModel.RoleId), "Rol secin.");
+            ModelState.AddModelError(nameof(viewModel.RoleId), "Rol seçin.");
         }
 
         if (!ModelState.IsValid)
@@ -58,7 +58,7 @@ public sealed class UsersController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Kullanici olusturulamadi.");
+            ModelState.AddModelError(string.Empty, result.Message ?? "Kullanıcı oluşturulamadı.");
             viewModel.Roles = await _userService.GetRoleOptionsAsync(cancellationToken);
             return View(viewModel);
         }

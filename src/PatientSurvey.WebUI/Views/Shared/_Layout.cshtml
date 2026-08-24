@@ -1,4 +1,4 @@
-@{
+﻿@{
     var currentArea = ViewContext.RouteData.Values["area"]?.ToString() ?? string.Empty;
     var isAdminArea = currentArea == "Admin";
     var isManagerArea = currentArea == "Manager";
@@ -21,7 +21,7 @@
                 <span class="brand-mark">PS</span>
                 <span>
                     <strong>Hasta Memnuniyet Anketi</strong>
-                    <small>Yonetim ve raporlama sistemi</small>
+                    <small>Yönetim ve raporlama sistemi</small>
                 </span>
             </a>
             <div class="nav-links">
@@ -36,12 +36,12 @@
                         <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Paneli</a>
                     }
                     <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                        <button type="submit" class="link-button">Cikis</button>
+                        <button type="submit" class="link-button">Çıkış</button>
                     </form>
                 }
                 else
                 {
-                    <a asp-area="" asp-controller="Account" asp-action="Login">Giris</a>
+                    <a asp-area="" asp-controller="Account" asp-action="Login">Giriş</a>
                 }
             </div>
         </nav>
@@ -50,20 +50,20 @@
             <div class="subnav">
                 @if (User.IsInRole("Manager"))
                 {
-                    <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Ozet</a>
+                    <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Özet</a>
                     <a asp-area="Manager" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
-                    <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuclar</a>
+                    <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                     <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
                 }
                 else
                 {
-                    <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Ozet</a>
+                    <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Özet</a>
                     <a asp-area="Admin" asp-controller="Surveys" asp-action="Index">Anketler</a>
                     <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
                     <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Linkler</a>
-                    <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuclar</a>
+                    <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                     <a asp-area="Admin" asp-controller="Reports" asp-action="Index">Raporlar</a>
-                    <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanicilar</a>
+                    <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanıcılar</a>
                 }
             </div>
         }

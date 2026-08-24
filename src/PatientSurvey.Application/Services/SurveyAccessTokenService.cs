@@ -1,4 +1,4 @@
-using PatientSurvey.Application.Common;
+﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.Survey;
 using PatientSurvey.Domain.Entities;
 using System.Security.Cryptography;
@@ -42,17 +42,17 @@ public sealed class SurveyAccessTokenService
         var survey = await _repository.GetSurveyByIdAsync(request.SurveyId, cancellationToken);
         if (survey is null)
         {
-            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("survey_not_found", "Anket bulunamadi.");
+            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("survey_not_found", "Anket bulunamadı.");
         }
 
         if (!survey.IsActive)
         {
-            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("survey_inactive", "Pasif anket icin link olusturulamaz.");
+            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("survey_inactive", "Pasif anket için link oluşturulamaz.");
         }
 
         if (request.ExpiresAtUtc.HasValue && request.ExpiresAtUtc.Value <= _clock.UtcNow)
         {
-            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("expires_invalid", "Son kullanma tarihi gelecekte olmalidir.");
+            return ServiceResult<SurveyAccessTokenListItemDto>.Failure("expires_invalid", "Son kullanma tarihi gelecekte olmalıdır.");
         }
 
         var tokenValue = await GenerateUniqueTokenAsync(cancellationToken);

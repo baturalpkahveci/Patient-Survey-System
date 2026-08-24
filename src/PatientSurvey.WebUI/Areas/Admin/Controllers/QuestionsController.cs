@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.Question;
 using PatientSurvey.Application.Services;
+using PatientSurvey.Domain.Enums;
 using PatientSurvey.WebUI.ViewModels.Admin;
 
 namespace PatientSurvey.WebUI.Areas.Admin.Controllers;
@@ -19,11 +20,25 @@ public sealed class QuestionsController : Controller
         _surveyService = surveyService;
     }
 
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        int? surveyId,
+        QuestionType? type,
+        string? status,
+        string? search,
+        CancellationToken cancellationToken)
     {
+        var questions = await _questionService.GetAdminQuestionsAsync(cancellationToken);
+        var filtered = ApplyFilters(questions, surveyId, type, status, search);
+
         return View(new QuestionIndexViewModel
         {
-            Questions = await _questionService.GetAdminQuestionsAsync(cancellationToken)
+            Questions = filtered.ToArray(),
+            Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken),
+            SurveyId = surveyId,
+            Type = type,
+            Status = status,
+            Search = search,
+            TotalCount = questions.Count
         });
     }
 
@@ -42,12 +57,12 @@ public sealed class QuestionsController : Controller
     {
         if (!viewModel.SurveyId.HasValue)
         {
-            ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket secin.");
+            ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket seçin.");
         }
 
         if (!viewModel.Type.HasValue)
         {
-            ModelState.AddModelError(nameof(viewModel.Type), "Soru tipi secin.");
+            ModelState.AddModelError(nameof(viewModel.Type), "Soru tipi seçin.");
         }
 
         if (!ModelState.IsValid)
@@ -68,7 +83,7 @@ public sealed class QuestionsController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Soru olusturulamadi.");
+            ModelState.AddModelError(string.Empty, result.Message ?? "Soru oluşturulamadı.");
             viewModel.Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken);
             return View(viewModel);
         }
@@ -87,5 +102,43 @@ public sealed class QuestionsController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private static IEnumerable<AdminQuestionListItemDto> ApplyFilters(
+        IReadOnlyCollection<AdminQuestionListItemDto> questions,
+        int? surveyId,
+        QuestionType? type,
+        string? status,
+        string? search)
+    {
+        var filtered = questions.AsEnumerable();
+
+        if (surveyId.HasValue)
+        {
+            filtered = filtered.Where(question => question.SurveyId == surveyId.Value);
+        }
+
+        if (type.HasValue)
+        {
+            filtered = filtered.Where(question => question.Type == type.Value);
+        }
+
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(question => question.IsActive);
+        }
+        else if (string.Equals(status, "passive", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(question => !question.IsActive);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            filtered = filtered.Where(question =>
+                question.Text.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                question.SurveyTitle.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        return filtered;
     }
 }

@@ -1,18 +1,18 @@
-@model ResultDetailViewModel
+﻿@model ResultDetailViewModel
 
 @{
-    ViewData["Title"] = "Sonuc Detayi";
+    ViewData["Title"] = "Sonuç Detayı";
     var result = Model.Result!;
 }
 
 <section class="admin-page">
     <div class="admin-heading">
         <h1>@result.SurveyTitle</h1>
-        <a asp-action="Index">Sonuclara don</a>
+        <a asp-action="Index">Sonuçlara dön</a>
     </div>
 
     <div class="detail-grid">
-        <div><span>Bolum</span><strong>@result.DepartmentName</strong></div>
+        <div><span>Bölüm</span><strong>@result.DepartmentName</strong></div>
         <div><span>Tarih</span><strong>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</strong></div>
     </div>
 
@@ -44,7 +44,7 @@
         {
             QuestionType.Score => answer.ScoreValue?.ToString() ?? "-",
             QuestionType.Text => string.IsNullOrWhiteSpace(answer.TextValue) ? "-" : answer.TextValue,
-            QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayir") : "-",
+            QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayır") : "-",
             _ => "-"
         };
     }

@@ -1,4 +1,4 @@
-@model CreateTokenViewModel
+﻿@model CreateTokenViewModel
 
 @{
     ViewData["Title"] = "Yeni Anket Linki";
@@ -14,7 +14,7 @@
         <div class="field-block">
             <label asp-for="SurveyId">Anket</label>
             <select asp-for="SurveyId">
-                <option value="">Anket secin</option>
+                <option value="">Anket seçin</option>
                 @foreach (var survey in Model.Surveys.Where(survey => survey.IsActive))
                 {
                     <option value="@survey.Id">@survey.Title</option>
@@ -29,7 +29,7 @@
             <span asp-validation-for="ExpiresAtUtc" class="field-validation"></span>
         </div>
 
-        <button type="submit" class="primary-button">Link Uret</button>
+        <button type="submit" class="primary-button">Link Üret</button>
     </form>
 </section>
 

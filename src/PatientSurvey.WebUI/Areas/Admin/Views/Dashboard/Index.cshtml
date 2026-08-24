@@ -1,4 +1,4 @@
-@model DashboardViewModel
+﻿@model DashboardViewModel
 
 @{
     ViewData["Title"] = "Admin Paneli";
@@ -7,9 +7,9 @@
 <section class="admin-page">
     <div class="admin-heading">
         <div>
-            <span class="eyebrow">Genel bakis</span>
+            <span class="eyebrow">Genel bakış</span>
             <h1>Admin Paneli</h1>
-            <p>Anket kurulumunu, kullanicilari, linkleri ve raporlari buradan yonetebilirsin.</p>
+            <p>Anket kurulumunu, kullanıcıları, linkleri ve raporları buradan yönetebilirsin.</p>
         </div>
         <a class="primary-button" asp-area="Admin" asp-controller="Surveys" asp-action="Create">Yeni Anket</a>
     </div>
@@ -20,16 +20,16 @@
         <div class="stat-tile"><span>Soru</span><strong>@Model.Overview.QuestionCount</strong></div>
         <div class="stat-tile"><span>Cevap</span><strong>@Model.Overview.ResponseCount</strong></div>
         <div class="stat-tile"><span>Link</span><strong>@Model.Overview.TokenCount</strong></div>
-        <div class="stat-tile"><span>Kullanilmamis Link</span><strong>@Model.Overview.UnusedTokenCount</strong></div>
+        <div class="stat-tile"><span>Kullanılmamış Link</span><strong>@Model.Overview.UnusedTokenCount</strong></div>
     </div>
 
     <div class="admin-grid">
-        <a asp-area="Admin" asp-controller="Surveys" asp-action="Index"><strong>Anketler</strong><span>Anket durumlarini ve iceriklerini yonet</span></a>
-        <a asp-area="Admin" asp-controller="Questions" asp-action="Index"><strong>Sorular</strong><span>Puan, metin ve evet/hayir sorulari</span></a>
-        <a asp-area="Admin" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Tek kullanimlik hasta baglantilari</span></a>
-        <a asp-area="Admin" asp-controller="Results" asp-action="Index"><strong>Sonuclar</strong><span>Gonderilen yanitlari incele</span></a>
-        <a asp-area="Admin" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Bolum ve anket performansi</span></a>
-        <a asp-area="Admin" asp-controller="Departments" asp-action="Index"><strong>Bolumler</strong><span>Hizmet birimlerini duzenle</span></a>
-        <a asp-area="Admin" asp-controller="Users" asp-action="Index"><strong>Kullanicilar</strong><span>Admin ve manager hesaplari</span></a>
+        <a asp-area="Admin" asp-controller="Surveys" asp-action="Index"><strong>Anketler</strong><span>Anket durumlarını ve içeriklerini yönet</span></a>
+        <a asp-area="Admin" asp-controller="Questions" asp-action="Index"><strong>Sorular</strong><span>Puan, metin ve evet/hayır soruları</span></a>
+        <a asp-area="Admin" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Tek kullanımlık hasta bağlantıları</span></a>
+        <a asp-area="Admin" asp-controller="Results" asp-action="Index"><strong>Sonuçlar</strong><span>Gönderilen yanıtları incele</span></a>
+        <a asp-area="Admin" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Bölüm ve anket performansı</span></a>
+        <a asp-area="Admin" asp-controller="Departments" asp-action="Index"><strong>Bölümler</strong><span>Hizmet birimlerini düzenle</span></a>
+        <a asp-area="Admin" asp-controller="Users" asp-action="Index"><strong>Kullanıcılar</strong><span>Admin ve manager hesapları</span></a>
     </div>
 </section>

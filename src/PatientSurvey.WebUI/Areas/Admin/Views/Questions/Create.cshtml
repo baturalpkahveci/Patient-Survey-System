@@ -1,4 +1,4 @@
-@model CreateQuestionViewModel
+﻿@model CreateQuestionViewModel
 
 @{
     ViewData["Title"] = "Yeni Soru";
@@ -14,7 +14,7 @@
         <div class="field-block">
             <label asp-for="SurveyId">Anket</label>
             <select asp-for="SurveyId">
-                <option value="">Anket secin</option>
+                <option value="">Anket seçin</option>
                 @foreach (var survey in Model.Surveys)
                 {
                     <option value="@survey.Id">@survey.Title</option>
@@ -36,7 +36,7 @@
         </div>
 
         <div class="field-block">
-            <label asp-for="DisplayOrder">Sira</label>
+            <label asp-for="DisplayOrder">Sıra</label>
             <input asp-for="DisplayOrder" type="number" min="1" max="1000" />
             <span asp-validation-for="DisplayOrder" class="field-validation"></span>
         </div>

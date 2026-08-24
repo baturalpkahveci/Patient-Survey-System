@@ -1,24 +1,24 @@
-@model CreateUserViewModel
+﻿@model CreateUserViewModel
 
 @{
-    ViewData["Title"] = "Yeni Kullanici";
+    ViewData["Title"] = "Yeni Kullanıcı";
 }
 
 <section class="admin-page">
-    <h1>Yeni Kullanici</h1>
+    <h1>Yeni Kullanıcı</h1>
 
     <form asp-action="Create" method="post" class="admin-form">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <div class="field-block">
-            <label asp-for="Username">Kullanici adi</label>
+            <label asp-for="Username">Kullanıcı adı</label>
             <input asp-for="Username" autocomplete="username" />
             <span asp-validation-for="Username" class="field-validation"></span>
         </div>
 
         <div class="field-block">
-            <label asp-for="Password">Sifre</label>
+            <label asp-for="Password">Şifre</label>
             <input asp-for="Password" autocomplete="new-password" />
             <span asp-validation-for="Password" class="field-validation"></span>
         </div>
@@ -26,7 +26,7 @@
         <div class="field-block">
             <label asp-for="RoleId">Rol</label>
             <select asp-for="RoleId">
-                <option value="">Rol secin</option>
+                <option value="">Rol seçin</option>
                 @foreach (var role in Model.Roles)
                 {
                     <option value="@role.Id">@role.Name</option>

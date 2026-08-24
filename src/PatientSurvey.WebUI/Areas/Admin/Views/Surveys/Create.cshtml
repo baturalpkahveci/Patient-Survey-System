@@ -1,4 +1,4 @@
-@model CreateSurveyViewModel
+﻿@model CreateSurveyViewModel
 
 @{
     ViewData["Title"] = "Yeni Anket";
@@ -12,13 +12,13 @@
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <div class="field-block">
-            <label asp-for="Title">Baslik</label>
+            <label asp-for="Title">Başlık</label>
             <input asp-for="Title" />
             <span asp-validation-for="Title" class="field-validation"></span>
         </div>
 
         <div class="field-block">
-            <label asp-for="Description">Aciklama</label>
+            <label asp-for="Description">Açıklama</label>
             <textarea asp-for="Description" rows="4"></textarea>
         </div>
 

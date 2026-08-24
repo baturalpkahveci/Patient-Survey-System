@@ -1,4 +1,4 @@
-@model TokenIndexViewModel
+﻿@model TokenIndexViewModel
 
 @{
     ViewData["Title"] = "Anket Linkleri";
@@ -12,7 +12,7 @@
 
     @if (Model.Tokens.Count == 0)
     {
-        <p>Henuz anket linki yok.</p>
+        <p>Henüz anket linki yok.</p>
     }
     else
     {
@@ -21,7 +21,7 @@
                 <tr>
                     <th>Anket</th>
                     <th>Link</th>
-                    <th>Olusturma</th>
+                    <th>Oluşturma</th>
                     <th>Son Kullanma</th>
                     <th>Durum</th>
                 </tr>
@@ -35,7 +35,7 @@
                         <td><input class="copy-input" value="@url" readonly /></td>
                         <td>@token.CreatedAtUtc.ToLocalTime().ToString("g")</td>
                         <td>@(token.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
-                        <td>@(token.HasResponse || token.UsedAtUtc.HasValue ? "Kullanildi" : "Hazir")</td>
+                        <td>@(token.HasResponse || token.UsedAtUtc.HasValue ? "Kullanıldı" : "Hazır")</td>
                     </tr>
                 }
             </tbody>

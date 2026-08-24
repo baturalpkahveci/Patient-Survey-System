@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Ana Sayfa";
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var isManager = User.IsInRole("Manager");
@@ -16,26 +16,26 @@
             }
             else
             {
-                <a class="primary-button" asp-controller="Account" asp-action="Login">Yonetim Girisi</a>
+                <a class="primary-button" asp-controller="Account" asp-action="Login">Yönetim Girişi</a>
             }
         </div>
     </div>
 
-    <div class="workflow-strip" aria-label="Uygulama akis adimlari">
+    <div class="workflow-strip" aria-label="Uygulama akış adımları">
         <div>
             <span>1</span>
-            <strong>Anketi hazirla</strong>
-            <p>Bolumleri, sorulari ve aktif anketleri duzenle.</p>
+            <strong>Anketi hazırla</strong>
+            <p>Bölümleri, soruları ve aktif anketleri düzenle.</p>
         </div>
         <div>
             <span>2</span>
-            <strong>Link uret</strong>
-            <p>Hasta icin tek kullanimlik ve takip edilebilir baglanti olustur.</p>
+            <strong>Link üret</strong>
+            <p>Hasta için tek kullanımlık ve takip edilebilir bağlantı oluştur.</p>
         </div>
         <div>
             <span>3</span>
-            <strong>Sonuclari izle</strong>
-            <p>Cevaplari, ortalama puanlari ve bolum performansini raporla.</p>
+            <strong>Sonuçları izle</strong>
+            <p>Cevapları, ortalama puanları ve bölüm performansını raporla.</p>
         </div>
     </div>
 </section>

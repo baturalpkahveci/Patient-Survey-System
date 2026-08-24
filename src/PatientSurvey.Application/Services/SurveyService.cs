@@ -1,4 +1,4 @@
-using PatientSurvey.Application.Common;
+﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.Department;
 using PatientSurvey.Application.DTOs.Question;
 using PatientSurvey.Application.DTOs.Survey;
@@ -29,18 +29,18 @@ public sealed class SurveyService
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return Failure("invalid_token", "Bu anket baglantisi gecersiz veya artik kullanilamiyor.");
+            return Failure("invalid_token", "Bu anket bağlantısı geçersiz veya artık kullanılamıyor.");
         }
 
         var accessToken = await _repository.GetTokenWithActiveSurveyAsync(token.Trim(), cancellationToken);
         if (accessToken?.Survey is null || accessToken.UsedAtUtc.HasValue)
         {
-            return Failure("invalid_token", "Bu anket baglantisi gecersiz veya artik kullanilamiyor.");
+            return Failure("invalid_token", "Bu anket bağlantısı geçersiz veya artık kullanılamıyor.");
         }
 
         if (accessToken.ExpiresAtUtc.HasValue && accessToken.ExpiresAtUtc.Value <= _clock.UtcNow)
         {
-            return Failure("expired_token", "Bu anket baglantisinin kullanim suresi dolmus.");
+            return Failure("expired_token", "Bu anket bağlantısının kullanım süresi dolmuş.");
         }
 
         var departments = await _repository.GetActiveDepartmentsAsync(cancellationToken);
@@ -91,7 +91,7 @@ public sealed class SurveyService
         var title = request.Title.Trim();
         if (string.IsNullOrWhiteSpace(title))
         {
-            return ServiceResult<int>.Failure("title_required", "Anket basligi zorunludur.");
+            return ServiceResult<int>.Failure("title_required", "Anket başlığı zorunludur.");
         }
 
         var survey = new SurveyEntity
@@ -115,7 +115,7 @@ public sealed class SurveyService
         var survey = await _adminRepository.GetSurveyByIdAsync(surveyId, cancellationToken);
         if (survey is null)
         {
-            return ServiceResult.Failure("survey_not_found", "Anket bulunamadi.");
+            return ServiceResult.Failure("survey_not_found", "Anket bulunamadı.");
         }
 
         survey.IsActive = !survey.IsActive;

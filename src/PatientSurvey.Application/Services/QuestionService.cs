@@ -1,4 +1,4 @@
-using PatientSurvey.Application.Common;
+﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.Question;
 using PatientSurvey.Application.Interfaces;
 using PatientSurvey.Domain.Entities;
@@ -46,7 +46,7 @@ public sealed class QuestionService
         var survey = await _repository.GetSurveyByIdAsync(request.SurveyId, cancellationToken);
         if (survey is null)
         {
-            return ServiceResult<int>.Failure("survey_not_found", "Anket bulunamadi.");
+            return ServiceResult<int>.Failure("survey_not_found", "Anket bulunamadı.");
         }
 
         var question = new Question
@@ -72,7 +72,7 @@ public sealed class QuestionService
         var question = await _repository.GetQuestionByIdAsync(questionId, cancellationToken);
         if (question is null)
         {
-            return ServiceResult.Failure("question_not_found", "Soru bulunamadi.");
+            return ServiceResult.Failure("question_not_found", "Soru bulunamadı.");
         }
 
         question.IsActive = !question.IsActive;

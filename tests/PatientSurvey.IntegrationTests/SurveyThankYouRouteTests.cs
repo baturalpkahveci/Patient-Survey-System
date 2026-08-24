@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 
@@ -23,7 +23,7 @@ public sealed class SurveyThankYouRouteTests : IClassFixture<SurveyThankYouRoute
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("success-panel", body);
-        Assert.Contains("Anketiniz basariyla gonderildi", body);
+        Assert.Contains("Anketiniz başarıyla gönderildi", body);
         Assert.DoesNotContain("Anket bağlantısı kullanılamıyor", body);
     }
 

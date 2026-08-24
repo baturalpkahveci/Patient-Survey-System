@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using PatientSurvey.Application.DTOs.Survey;
 
 namespace PatientSurvey.WebUI.ViewModels.Admin;
@@ -10,7 +10,7 @@ public sealed class SurveyIndexViewModel
 
 public sealed class CreateSurveyViewModel
 {
-    [Required(ErrorMessage = "Anket basligi zorunludur.")]
+    [Required(ErrorMessage = "Anket başlığı zorunludur.")]
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }

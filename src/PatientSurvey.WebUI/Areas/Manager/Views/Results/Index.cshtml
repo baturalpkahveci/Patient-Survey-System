@@ -1,17 +1,58 @@
-@model ResultIndexViewModel
+﻿@model ResultIndexViewModel
 
 @{
-    ViewData["Title"] = "Sonuclar";
+    ViewData["Title"] = "Sonuçlar";
 }
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Anket Sonuclari</h1>
+        <h1>Anket Sonuçları</h1>
     </div>
+
+    <form method="get" class="filter-bar">
+        <div class="field-block">
+            <label for="surveyId">Anket</label>
+            <select id="surveyId" name="surveyId">
+                <option value="">Tüm anketler</option>
+                @foreach (var survey in Model.SurveyOptions)
+                {
+                    <option value="@survey.Value" selected="@(Model.SurveyId?.ToString() == survey.Value)">@survey.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="departmentName">Bölüm</label>
+            <select id="departmentName" name="departmentName">
+                <option value="">Tüm bölümler</option>
+                @foreach (var department in Model.DepartmentOptions)
+                {
+                    <option value="@department.Value" selected="@(Model.DepartmentName == department.Value)">@department.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="fromDate">Baslangic</label>
+            <input id="fromDate" name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="toDate">Bitis</label>
+            <input id="toDate" name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="minAverage">Min. Ortalama</label>
+            <input id="minAverage" name="minAverage" type="number" min="1" max="5" step="0.1" value="@(Model.MinAverage?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+        </div>
+    </form>
+
+    <p class="filter-summary">@Model.Results.Count / @Model.TotalCount sonuç gösteriliyor.</p>
 
     @if (Model.Results.Count == 0)
     {
-        <p>Henuz cevaplanmis anket yok.</p>
+        <p>Filtreye uygun cevaplanmış anket yok.</p>
     }
     else
     {
@@ -19,7 +60,7 @@
             <thead>
                 <tr>
                     <th>Anket</th>
-                    <th>Bolum</th>
+                    <th>Bölüm</th>
                     <th>Tarih</th>
                     <th>Cevap</th>
                     <th>Ortalama</th>

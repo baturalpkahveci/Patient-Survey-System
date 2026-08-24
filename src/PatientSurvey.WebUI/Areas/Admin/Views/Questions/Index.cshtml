@@ -1,4 +1,4 @@
-@model QuestionIndexViewModel
+﻿@model QuestionIndexViewModel
 
 @{
     ViewData["Title"] = "Sorular";
@@ -6,13 +6,54 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Soru Yonetimi</h1>
+        <h1>Soru Yönetimi</h1>
         <a class="primary-button" asp-action="Create">Yeni Soru</a>
     </div>
 
+    <form method="get" class="filter-bar">
+        <div class="field-block">
+            <label for="surveyId">Anket</label>
+            <select id="surveyId" name="surveyId">
+                <option value="">Tüm anketler</option>
+                @foreach (var survey in Model.Surveys)
+                {
+                    <option value="@survey.Id" selected="@(Model.SurveyId == survey.Id)">@survey.Title</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="type">Tip</label>
+            <select id="type" name="type">
+                <option value="">Tüm tipler</option>
+                @foreach (var type in Enum.GetValues<QuestionType>())
+                {
+                    <option value="@type" selected="@(Model.Type == type)">@type</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="status">Durum</label>
+            <select id="status" name="status">
+                <option value="">Tüm durumlar</option>
+                <option value="active" selected="@(Model.Status == "active")">Aktif</option>
+                <option value="passive" selected="@(Model.Status == "passive")">Pasif</option>
+            </select>
+        </div>
+        <div class="field-block filter-search">
+            <label for="search">Arama</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="Soru veya anket adı" />
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+        </div>
+    </form>
+
+    <p class="filter-summary">@Model.Questions.Count / @Model.TotalCount soru gösteriliyor.</p>
+
     @if (Model.Questions.Count == 0)
     {
-        <p>Henuz soru yok.</p>
+        <p>Filtreye uygun soru bulunamadı.</p>
     }
     else
     {
@@ -20,7 +61,7 @@
             <thead>
                 <tr>
                     <th>Anket</th>
-                    <th>Sira</th>
+                    <th>Sıra</th>
                     <th>Soru</th>
                     <th>Tip</th>
                     <th>Durum</th>

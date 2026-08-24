@@ -1,4 +1,4 @@
-using PatientSurvey.Application.Common;
+﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.Report;
 using PatientSurvey.Application.DTOs.Response;
 using PatientSurvey.Application.Interfaces;
@@ -49,7 +49,7 @@ public sealed class ReportService
         var response = await _repository.GetResponseDetailAsync(responseId, cancellationToken);
         if (response?.Token?.Survey is null || response.Department is null)
         {
-            return ServiceResult<SurveyResponseDetailDto>.Failure("response_not_found", "Anket sonucu bulunamadi.");
+            return ServiceResult<SurveyResponseDetailDto>.Failure("response_not_found", "Anket sonucu bulunamadı.");
         }
 
         var answers = response.Answers

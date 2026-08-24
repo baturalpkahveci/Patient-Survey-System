@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using PatientSurvey.Application.DTOs.Survey;
 
 namespace PatientSurvey.WebUI.ViewModels.Admin;
@@ -11,7 +11,7 @@ public sealed class TokenIndexViewModel
 
 public sealed class CreateTokenViewModel
 {
-    [Required(ErrorMessage = "Anket secin.")]
+    [Required(ErrorMessage = "Anket seçin.")]
     public int? SurveyId { get; set; }
 
     [DataType(DataType.DateTime)]

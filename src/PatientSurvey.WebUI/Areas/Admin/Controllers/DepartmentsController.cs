@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.Department;
 using PatientSurvey.Application.Services;
@@ -45,7 +45,7 @@ public sealed class DepartmentsController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Bolum olusturulamadi.");
+            ModelState.AddModelError(string.Empty, result.Message ?? "Bölüm oluşturulamadı.");
             return View(viewModel);
         }
 

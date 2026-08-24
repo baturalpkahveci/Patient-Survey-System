@@ -1,18 +1,18 @@
-@model CreateDepartmentViewModel
+﻿@model CreateDepartmentViewModel
 
 @{
-    ViewData["Title"] = "Yeni Bolum";
+    ViewData["Title"] = "Yeni Bölüm";
 }
 
 <section class="admin-page">
-    <h1>Yeni Bolum</h1>
+    <h1>Yeni Bölüm</h1>
 
     <form asp-action="Create" method="post" class="admin-form">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <div class="field-block">
-            <label asp-for="Name">Bolum adi</label>
+            <label asp-for="Name">Bölüm adı</label>
             <input asp-for="Name" />
             <span asp-validation-for="Name" class="field-validation"></span>
         </div>

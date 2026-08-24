@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.Survey;
 using PatientSurvey.Application.Services;
@@ -45,7 +45,7 @@ public sealed class SurveysController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Anket olusturulamadi.");
+            ModelState.AddModelError(string.Empty, result.Message ?? "Anket oluşturulamadı.");
             return View(viewModel);
         }
 

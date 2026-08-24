@@ -1,4 +1,4 @@
-using PatientSurvey.Application.DTOs.Department;
+﻿using PatientSurvey.Application.DTOs.Department;
 using PatientSurvey.Application.Interfaces;
 using PatientSurvey.Application.Common;
 using PatientSurvey.Domain.Entities;
@@ -46,12 +46,12 @@ public sealed class DepartmentService
         var name = request.Name.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            return ServiceResult.Failure("department_name_required", "Bolum adi zorunludur.");
+            return ServiceResult.Failure("department_name_required", "Bölüm adı zorunludur.");
         }
 
         if (await _adminRepository.DepartmentNameExistsAsync(name, cancellationToken))
         {
-            return ServiceResult.Failure("department_exists", "Bu bolum zaten kayitli.");
+            return ServiceResult.Failure("department_exists", "Bu bölüm zaten kayıtlı.");
         }
 
         _adminRepository.AddDepartment(new Department
@@ -71,7 +71,7 @@ public sealed class DepartmentService
         var department = await _adminRepository.GetDepartmentByIdAsync(departmentId, cancellationToken);
         if (department is null)
         {
-            return ServiceResult.Failure("department_not_found", "Bolum bulunamadi.");
+            return ServiceResult.Failure("department_not_found", "Bölüm bulunamadı.");
         }
 
         department.IsActive = !department.IsActive;

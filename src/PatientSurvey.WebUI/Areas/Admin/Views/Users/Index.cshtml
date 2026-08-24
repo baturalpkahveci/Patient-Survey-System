@@ -1,25 +1,25 @@
-@model UserIndexViewModel
+﻿@model UserIndexViewModel
 
 @{
-    ViewData["Title"] = "Kullanicilar";
+    ViewData["Title"] = "Kullanıcılar";
 }
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Kullanici Yonetimi</h1>
-        <a class="primary-button" asp-action="Create">Yeni Kullanici</a>
+        <h1>Kullanıcı Yönetimi</h1>
+        <a class="primary-button" asp-action="Create">Yeni Kullanıcı</a>
     </div>
 
     @if (Model.Users.Count == 0)
     {
-        <p>Henuz kullanici yok.</p>
+        <p>Henüz kullanıcı yok.</p>
     }
     else
     {
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Kullanici adi</th>
+                    <th>Kullanıcı adı</th>
                     <th>Rol</th>
                     <th>Durum</th>
                     <th></th>

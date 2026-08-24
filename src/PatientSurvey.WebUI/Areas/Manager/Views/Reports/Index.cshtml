@@ -1,4 +1,4 @@
-@model ReportIndexViewModel
+﻿@model ReportIndexViewModel
 
 @{
     ViewData["Title"] = "Raporlar";
@@ -9,9 +9,34 @@
         <h1>Raporlar</h1>
     </div>
 
+    <form method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label for="search">Anket</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="Anket adı ara" />
+        </div>
+        <div class="field-block">
+            <label for="status">Durum</label>
+            <select id="status" name="status">
+                <option value="">Tüm durumlar</option>
+                <option value="active" selected="@(Model.Status == "active")">Aktif</option>
+                <option value="passive" selected="@(Model.Status == "passive")">Pasif</option>
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="minResponses">Min. Cevap</label>
+            <input id="minResponses" name="minResponses" type="number" min="0" step="1" value="@Model.MinResponses" />
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+        </div>
+    </form>
+
+    <p class="filter-summary">@Model.Reports.Count / @Model.TotalCount rapor gösteriliyor.</p>
+
     @if (Model.Reports.Count == 0)
     {
-        <p>Henuz raporlanacak anket yok.</p>
+        <p>Filtreye uygun rapor bulunamadı.</p>
     }
     else
     {
@@ -27,7 +52,7 @@
                         <div><span>Soru</span><strong>@report.QuestionCount</strong></div>
                         <div><span>Link</span><strong>@report.TokenCount</strong></div>
                         <div><span>Cevap</span><strong>@report.ResponseCount</strong></div>
-                        <div><span>Puan Ort.</span><strong>@(report.AverageScore?.ToString("0.00") ?? "-")</strong></div>
+                        <div><span>Puan Ortalaması</span><strong>@(report.AverageScore?.ToString("0.00") ?? "-")</strong></div>
                     </div>
 
                     @if (report.Departments.Count > 0)
@@ -35,9 +60,9 @@
                         <table class="admin-table compact-table">
                             <thead>
                                 <tr>
-                                    <th>Bolum</th>
+                                    <th>Bölüm</th>
                                     <th>Cevap</th>
-                                    <th>Puan Ort.</th>
+                                    <th>Puan Ortalaması</th>
                                 </tr>
                             </thead>
                             <tbody>

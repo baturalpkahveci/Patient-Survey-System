@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using PatientSurvey.Application.DTOs.User;
 
 namespace PatientSurvey.WebUI.ViewModels.Admin;
@@ -10,15 +10,15 @@ public sealed class UserIndexViewModel
 
 public sealed class CreateUserViewModel
 {
-    [Required(ErrorMessage = "Kullanici adi zorunludur.")]
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
     public string Username { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Sifre zorunludur.")]
-    [MinLength(8, ErrorMessage = "Sifre en az 8 karakter olmalidir.")]
+    [Required(ErrorMessage = "Şifre zorunludur.")]
+    [MinLength(8, ErrorMessage = "Şifre en az 8 karakter olmalıdır.")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Rol secin.")]
+    [Required(ErrorMessage = "Rol seçin.")]
     public int? RoleId { get; set; }
 
     public bool IsActive { get; set; } = true;

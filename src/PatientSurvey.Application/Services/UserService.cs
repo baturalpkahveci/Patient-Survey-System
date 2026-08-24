@@ -1,4 +1,4 @@
-using PatientSurvey.Application.Common;
+﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.User;
 using PatientSurvey.Application.Interfaces;
 using PatientSurvey.Domain.Entities;
@@ -75,23 +75,23 @@ public sealed class UserService
         var username = request.Username.Trim();
         if (string.IsNullOrWhiteSpace(username))
         {
-            return ServiceResult.Failure("username_required", "Kullanici adi zorunludur.");
+            return ServiceResult.Failure("username_required", "Kullanıcı adı zorunludur.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
         {
-            return ServiceResult.Failure("password_invalid", "Sifre en az 8 karakter olmalidir.");
+            return ServiceResult.Failure("password_invalid", "Şifre en az 8 karakter olmalıdır.");
         }
 
         var role = await _adminRepository.GetRoleByIdAsync(request.RoleId, cancellationToken);
         if (role is null || !role.IsActive)
         {
-            return ServiceResult.Failure("role_invalid", "Gecerli bir rol secin.");
+            return ServiceResult.Failure("role_invalid", "Geçerli bir rol seçin.");
         }
 
         if (await _adminRepository.UsernameExistsAsync(username, cancellationToken))
         {
-            return ServiceResult.Failure("username_exists", "Bu kullanici adi zaten kullaniliyor.");
+            return ServiceResult.Failure("username_exists", "Bu kullanıcı adı zaten kullanılıyor.");
         }
 
         _adminRepository.AddUser(new User
@@ -113,7 +113,7 @@ public sealed class UserService
         var user = await _adminRepository.GetUserByIdAsync(userId, cancellationToken);
         if (user is null)
         {
-            return ServiceResult.Failure("user_not_found", "Kullanici bulunamadi.");
+            return ServiceResult.Failure("user_not_found", "Kullanıcı bulunamadı.");
         }
 
         user.IsActive = !user.IsActive;
@@ -123,6 +123,6 @@ public sealed class UserService
 
     private static ServiceResult<AuthenticatedUserDto> LoginFailure()
     {
-        return ServiceResult<AuthenticatedUserDto>.Failure("invalid_login", "Kullanici adi veya sifre hatali.");
+        return ServiceResult<AuthenticatedUserDto>.Failure("invalid_login", "Kullanıcı adı veya şifre hatalı.");
     }
 }

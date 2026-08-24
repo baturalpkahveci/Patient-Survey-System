@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.Survey;
 using PatientSurvey.Application.Services;
@@ -43,7 +43,7 @@ public sealed class TokensController : Controller
     {
         if (!viewModel.SurveyId.HasValue)
         {
-            ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket secin.");
+            ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket seçin.");
         }
 
         if (!ModelState.IsValid)
@@ -58,7 +58,7 @@ public sealed class TokensController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Anket linki olusturulamadi.");
+            ModelState.AddModelError(string.Empty, result.Message ?? "Anket linki oluşturulamadı.");
             viewModel.Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken);
             return View(viewModel);
         }
