@@ -16,6 +16,7 @@ public interface IRepositoryManager
     IPatientVisitRepository PatientVisits { get; }
     ISurveyInvitationRepository SurveyInvitations { get; }
     ISurveyConsentRepository SurveyConsents { get; }
+    IAuditLogRepository AuditLogs { get; }
     Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task<int> SaveAsync(CancellationToken cancellationToken = default);
 }

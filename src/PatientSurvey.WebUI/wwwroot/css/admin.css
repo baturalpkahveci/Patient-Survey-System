@@ -540,6 +540,34 @@
   padding: 0.58rem 0.65rem;
 }
 
+.audit-table td {
+  vertical-align: top;
+}
+
+.audit-details summary {
+  cursor: pointer;
+  color: var(--primary-dark);
+  font-weight: 800;
+}
+
+.audit-change-list {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 260px;
+  max-width: 520px;
+  margin-top: 0.5rem;
+}
+
+.audit-change-list span {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.45rem 0.55rem;
+  background: #fff;
+  color: var(--ink);
+  white-space: normal;
+  word-break: break-word;
+}
+
 @media (max-width: 760px) {
   .admin-heading {
     align-items: stretch;

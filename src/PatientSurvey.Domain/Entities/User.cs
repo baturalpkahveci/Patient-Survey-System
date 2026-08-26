@@ -13,4 +13,5 @@ public sealed class User
     public Doctor? Doctor { get; set; }
     public ICollection<PatientVisit> CreatedPatientVisits { get; set; } = new List<PatientVisit>();
     public ICollection<SurveyInvitation> CreatedSurveyInvitations { get; set; } = new List<SurveyInvitation>();
+    public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 }

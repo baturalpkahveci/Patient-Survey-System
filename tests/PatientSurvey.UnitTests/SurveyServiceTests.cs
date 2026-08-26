@@ -143,6 +143,127 @@ public sealed class SurveyServiceTests
     }
 
     [Fact]
+    public async Task CreateSurveyAsync_for_doctor_uses_current_doctor_department_scope()
+    {
+        var adminRepository = new FakeAdminSurveyRepository();
+        var invitationRepository = new FakeInvitationRepository
+        {
+            DoctorByUserId = new Doctor
+            {
+                Id = 3,
+                UserId = 10,
+                DepartmentId = 5,
+                IsActive = true,
+                Department = new Department { Id = 5, Name = "Kardiyoloji", IsActive = true }
+            }
+        };
+        var service = new SurveyService(
+            new FakeSurveyReadRepository(),
+            adminRepository,
+            new FixedClock(Now),
+            invitationRepository);
+
+        var result = await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Doktor Anketi",
+            null,
+            true,
+            IsGeneral: false,
+            CreatedByUserId: 10,
+            CreatedByRole: "Doctor"));
+
+        Assert.True(result.IsSuccess);
+        var survey = Assert.Single(adminRepository.AddedSurveys);
+        Assert.Equal(3, survey.DoctorId);
+        Assert.Equal(5, survey.DepartmentId);
+    }
+
+    [Fact]
+    public async Task CreateSurveyAsync_for_doctor_rejects_missing_user_inactive_doctor_and_inactive_department()
+    {
+        var invitationRepository = new FakeInvitationRepository();
+        var service = new SurveyService(
+            new FakeSurveyReadRepository(),
+            new FakeAdminSurveyRepository(),
+            new FixedClock(Now),
+            invitationRepository);
+
+        Assert.Equal("doctor_user_required", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Doktor Anketi",
+            null,
+            true,
+            IsGeneral: false,
+            CreatedByRole: "Doctor"))).ErrorCode);
+
+        invitationRepository.DoctorByUserId = new Doctor
+        {
+            Id = 3,
+            UserId = 10,
+            DepartmentId = 5,
+            IsActive = false,
+            Department = new Department { Id = 5, Name = "Kardiyoloji", IsActive = true }
+        };
+        Assert.Equal("doctor_inactive", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Doktor Anketi",
+            null,
+            true,
+            IsGeneral: false,
+            CreatedByUserId: 10,
+            CreatedByRole: "Doctor"))).ErrorCode);
+
+        invitationRepository.DoctorByUserId.IsActive = true;
+        invitationRepository.DoctorByUserId.Department.IsActive = false;
+        Assert.Equal("doctor_inactive", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Doktor Anketi",
+            null,
+            true,
+            IsGeneral: false,
+            CreatedByUserId: 10,
+            CreatedByRole: "Doctor"))).ErrorCode);
+    }
+
+    [Fact]
+    public async Task CreateSurveyAsync_for_admin_targeted_survey_validates_department_doctor_pair()
+    {
+        var invitationRepository = new FakeInvitationRepository
+        {
+            DoctorById = new Doctor
+            {
+                Id = 4,
+                DepartmentId = 8,
+                IsActive = true,
+                Department = new Department { Id = 8, Name = "Dahiliye", IsActive = true }
+            }
+        };
+        var service = new SurveyService(
+            new FakeSurveyReadRepository(),
+            new FakeAdminSurveyRepository(),
+            new FixedClock(Now),
+            invitationRepository);
+
+        Assert.Equal("department_required", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Hedefli",
+            null,
+            true,
+            IsGeneral: false,
+            DoctorId: 4))).ErrorCode);
+
+        Assert.Equal("doctor_required", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Hedefli",
+            null,
+            true,
+            IsGeneral: false,
+            DepartmentId: 8))).ErrorCode);
+
+        Assert.Equal("doctor_department_mismatch", (await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Hedefli",
+            null,
+            true,
+            IsGeneral: false,
+            DepartmentId: 7,
+            DoctorId: 4))).ErrorCode);
+    }
+
+    [Fact]
     public async Task ToggleSurveyStatusAsync_flips_status_or_returns_not_found()
     {
         var adminRepository = new FakeAdminSurveyRepository();
@@ -228,18 +349,17 @@ public sealed class SurveyServiceTests
     {
         public Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<Survey?> GetSurveyByIdAsync(int surveyId, bool trackChanges, CancellationToken cancellationToken) => Task.FromResult<Survey?>(null);
-        public Task<Doctor?> GetDoctorByIdAsync(int doctorId, CancellationToken cancellationToken) => Task.FromResult<Doctor?>(null);
+        public Doctor? DoctorById { get; init; }
+        public Doctor? DoctorByUserId { get; set; }
+
+        public Task<Doctor?> GetDoctorByIdAsync(int doctorId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(DoctorById?.Id == doctorId ? DoctorById : null);
+        }
 
         public Task<Doctor?> GetDoctorByUserIdAsync(int userId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<Doctor?>(new Doctor
-            {
-                Id = 3,
-                UserId = userId,
-                DepartmentId = 5,
-                IsActive = true,
-                Department = new Department { Id = 5, Name = "Kardiyoloji", IsActive = true }
-            });
+            return Task.FromResult(DoctorByUserId?.UserId == userId ? DoctorByUserId : null);
         }
 
         public Task<IReadOnlyCollection<Doctor>> GetActiveDoctorsByDepartmentAsync(int departmentId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Doctor>>(Array.Empty<Doctor>());

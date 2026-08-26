@@ -12,6 +12,7 @@ using AppIAdminSurveyRepository = PatientSurvey.Application.Interfaces.IAdminSur
 using AppIAdminUserRepository = PatientSurvey.Application.Interfaces.IAdminUserRepository;
 using AppIManagementReportRepository = PatientSurvey.Application.Interfaces.IManagementReportRepository;
 using AppIDoctorManagementRepository = PatientSurvey.Application.Interfaces.IDoctorManagementRepository;
+using AppIAuditLogRepository = PatientSurvey.Application.Interfaces.IAuditLogRepository;
 using AppIEmailSender = PatientSurvey.Application.Interfaces.IEmailSender;
 using AppIPatientIdentityProtector = PatientSurvey.Application.Interfaces.IPatientIdentityProtector;
 using AppIPasswordHasher = PatientSurvey.Application.Interfaces.IPasswordHasher;
@@ -52,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<AppIAdminDepartmentRepository, AdminDepartmentRepository>();
         services.AddScoped<AppIManagementReportRepository, ManagementReportRepository>();
         services.AddScoped<AppIDoctorManagementRepository, DoctorManagementRepository>();
+        services.AddScoped<AppIAuditLogRepository, AuditLogReadRepository>();
         services.AddScoped<AppISurveySubmissionRepository>(provider =>
             provider.GetRequiredService<SurveyWorkflowRepository>());
         services.AddScoped<AppISurveyReadRepository>(provider =>

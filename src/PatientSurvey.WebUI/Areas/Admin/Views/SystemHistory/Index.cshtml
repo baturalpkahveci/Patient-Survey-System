@@ -1,0 +1,219 @@
+@using System.Text.Json
+@using PatientSurvey.Application.DTOs.Audit
+@model SystemHistoryIndexViewModel
+
+@{
+    ViewData["Title"] = "Sistem Geçmişi";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>Sistem Geçmişi</h1>
+            <p>Kullanıcıların sistemde yaptığı ekleme, güncelleme ve silme işlemlerini izleyin.</p>
+        </div>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label asp-for="Search">Arama</label>
+            <input asp-for="Search" placeholder="Özet, kayıt no veya sayfa yolu" />
+        </div>
+        <div class="field-block">
+            <label asp-for="Username">Kullanıcı</label>
+            <select asp-for="Username">
+                <option value="">Tüm kullanıcılar</option>
+                @foreach (var user in Model.UserOptions)
+                {
+                    <option value="@user.Value">@user.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label asp-for="Action">İşlem</label>
+            <select asp-for="Action">
+                <option value="">Tüm işlemler</option>
+                @foreach (var action in Model.ActionOptions)
+                {
+                    <option value="@action.Value">@action.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label asp-for="EntityName">Kayıt Tipi</label>
+            <select asp-for="EntityName">
+                <option value="">Tüm kayıt tipleri</option>
+                @foreach (var entity in Model.EntityOptions)
+                {
+                    <option value="@entity.Value">@entity.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label asp-for="FromDate">Başlangıç</label>
+            <input asp-for="FromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label asp-for="ToDate">Bitiş</label>
+            <input asp-for="ToDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label asp-for="SortDirection">Sıralama</label>
+            <select asp-for="SortDirection">
+                <option value="desc">Yeni kayıtlar önce</option>
+                <option value="asc">Eski kayıtlar önce</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+            <span class="filter-summary">@Model.Logs.Count / @Model.TotalCount kayıt</span>
+        </div>
+    </form>
+
+    @if (Model.Logs.Count == 0)
+    {
+        <p>Filtreye uygun sistem geçmişi kaydı yok.</p>
+    }
+    else
+    {
+        <table class="admin-table compact-table audit-table">
+            <thead>
+                <tr>
+                    <th>Zaman</th>
+                    <th>Kullanıcı</th>
+                    <th>İşlem</th>
+                    <th>Kayıt</th>
+                    <th>Özet</th>
+                    <th>Detay</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.Logs)
+                {
+                    <tr>
+                        <td>
+                            <strong>@log.OccurredAtUtc.ToLocalTime().ToString("g")</strong>
+                            @if (!string.IsNullOrWhiteSpace(log.RequestPath))
+                            {
+                                <span class="table-note">@log.RequestPath</span>
+                            }
+                        </td>
+                        <td>
+                            <strong>@log.Username</strong>
+                            @if (!string.IsNullOrWhiteSpace(log.UserRole))
+                            {
+                                <span class="table-note">@log.UserRole</span>
+                            }
+                        </td>
+                        <td><span class="status-pill">@log.Action</span></td>
+                        <td>
+                            <strong>@log.EntityName</strong>
+                            @if (!string.IsNullOrWhiteSpace(log.EntityId))
+                            {
+                                <span class="table-note">#@log.EntityId</span>
+                            }
+                        </td>
+                        <td>@log.Summary</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(log.ChangesJson))
+                            {
+                                <span class="table-note">Detay yok</span>
+                            }
+                            else
+                            {
+                                <details class="audit-details">
+                                    <summary>Göster</summary>
+                                    <div class="audit-change-list">
+                                        @foreach (var change in FormatChanges(log))
+                                        {
+                                            <span>@change</span>
+                                        }
+                                    </div>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@functions {
+    private static IReadOnlyCollection<string> FormatChanges(AuditLogListItemDto log)
+    {
+        if (string.IsNullOrWhiteSpace(log.ChangesJson))
+        {
+            return Array.Empty<string>();
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(log.ChangesJson);
+            return document.RootElement.EnumerateObject()
+                .Select(property => $"{PropertyLabel(property.Name)}: {FormatChangeValue(property.Value)}")
+                .ToArray();
+        }
+        catch (JsonException)
+        {
+            return new[] { log.ChangesJson };
+        }
+    }
+
+    private static string FormatChangeValue(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object &&
+            value.TryGetProperty("Eski", out var oldValue) &&
+            value.TryGetProperty("Yeni", out var newValue))
+        {
+            return $"{FormatScalar(oldValue)} → {FormatScalar(newValue)}";
+        }
+
+        return FormatScalar(value);
+    }
+
+    private static string FormatScalar(JsonElement value)
+    {
+        return value.ValueKind switch
+        {
+            JsonValueKind.Null => "-",
+            JsonValueKind.String => value.GetString() ?? "-",
+            JsonValueKind.True => "Evet",
+            JsonValueKind.False => "Hayır",
+            _ => value.ToString()
+        };
+    }
+
+    private static string PropertyLabel(string propertyName)
+    {
+        return propertyName switch
+        {
+            "Username" => "Kullanıcı adı",
+            "RoleId" => "Rol",
+            "IsActive" => "Aktif",
+            "CreatedAtUtc" => "Oluşturulma zamanı",
+            "UpdatedAtUtc" => "Güncellenme zamanı",
+            "Title" => "Başlık",
+            "Description" => "Açıklama",
+            "Text" => "Metin",
+            "Type" => "Tip",
+            "DisplayOrder" => "Sıra",
+            "IsRequired" => "Zorunlu",
+            "DepartmentId" => "Bölüm",
+            "DoctorId" => "Doktor",
+            "FirstName" => "Ad",
+            "LastName" => "Soyad",
+            "PhoneNumber" => "Telefon",
+            "Email" => "E-posta",
+            "DeliveryMethod" => "Gönderim yöntemi",
+            "DeliveryStatus" => "Gönderim durumu",
+            "ExpiresAtUtc" => "Son kullanma zamanı",
+            "UsedAtUtc" => "Kullanım zamanı",
+            "PasswordHash" => "Şifre",
+            "TcIdentityLookupHash" => "T.C. kimlik izi",
+            "Token" => "Link tokenı",
+            _ => propertyName
+        };
+    }
+}

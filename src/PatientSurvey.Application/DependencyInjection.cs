@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<UserService>();
         services.AddScoped<ReportService>();
         services.AddScoped<DoctorService>();
+        services.AddScoped<AuditLogService>();
         services.AddSingleton<KvkkNoticeProvider>();
         services.AddSingleton<Interfaces.IKvkkNoticeProvider>(provider => provider.GetRequiredService<KvkkNoticeProvider>());
 

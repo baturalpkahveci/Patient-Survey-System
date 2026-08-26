@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -62,6 +63,20 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
     }
 
+    [Fact]
+    public async Task Admin_system_history_lists_audit_logs_when_action_filter_is_empty()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Admin");
+
+        var response = await client.GetAsync("/Admin/SystemHistory");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Question added", body);
+        Assert.Contains("User deactivated", body);
+    }
+
     [Theory]
     [InlineData("/Admin/Dashboard")]
     [InlineData("/Admin/Results")]
@@ -85,6 +100,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DoctorsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.TokensController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.ResultsController), "Admin")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.SystemHistoryController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.DashboardController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.TokensController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.ResultsController), "Manager")]
@@ -101,6 +117,22 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         Assert.NotNull(authorize);
         Assert.Equal(expectedRoles, authorize!.Roles);
+    }
+
+    [Fact]
+    public void System_history_action_filter_does_not_bind_from_route_action()
+    {
+        var method = typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.SystemHistoryController)
+            .GetMethod(nameof(PatientSurvey.WebUI.Areas.Admin.Controllers.SystemHistoryController.Index));
+
+        Assert.NotNull(method);
+        Assert.DoesNotContain(method!.GetParameters(), parameter => parameter.Name == "action");
+
+        var actionFilter = method.GetParameters().Single(parameter => parameter.Name == "actionFilter");
+        var fromQuery = actionFilter.GetCustomAttribute<FromQueryAttribute>();
+
+        Assert.NotNull(fromQuery);
+        Assert.Equal("Action", fromQuery!.Name);
     }
 
     public sealed class Factory : WebApplicationFactory<Program>
@@ -132,6 +164,39 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
                 services.AddScoped<IManagementReportRepository, EmptyReportRepository>();
                 services.AddScoped<IDoctorManagementRepository, EmptyDoctorManagementRepository>();
+                services.AddScoped<IAuditLogRepository, SampleAuditLogRepository>();
+            });
+        }
+    }
+
+    private sealed class SampleAuditLogRepository : IAuditLogRepository
+    {
+        public Task<IReadOnlyCollection<AuditLog>> GetAuditLogsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<AuditLog>>(new[]
+            {
+                new AuditLog
+                {
+                    Id = 1,
+                    OccurredAtUtc = DateTimeOffset.UtcNow.AddMinutes(-1),
+                    Username = "admin",
+                    UserRole = "Admin",
+                    Action = "Ekleme",
+                    EntityName = "Soru",
+                    EntityId = "1",
+                    Summary = "Question added"
+                },
+                new AuditLog
+                {
+                    Id = 2,
+                    OccurredAtUtc = DateTimeOffset.UtcNow,
+                    Username = "admin",
+                    UserRole = "Admin",
+                    Action = "Güncelleme",
+                    EntityName = "Kullanıcı",
+                    EntityId = "2",
+                    Summary = "User deactivated"
+                }
             });
         }
     }

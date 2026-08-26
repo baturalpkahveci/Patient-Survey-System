@@ -25,6 +25,7 @@ public sealed class RepositoryManager : IRepositoryManager
     private readonly Lazy<IPatientVisitRepository> _patientVisitRepository;
     private readonly Lazy<ISurveyInvitationRepository> _surveyInvitationRepository;
     private readonly Lazy<ISurveyConsentRepository> _surveyConsentRepository;
+    private readonly Lazy<IAuditLogRepository> _auditLogRepository;
 
     public RepositoryManager(AppDbContext context)
     {
@@ -41,6 +42,7 @@ public sealed class RepositoryManager : IRepositoryManager
         _patientVisitRepository = new Lazy<IPatientVisitRepository>(() => new PatientVisitRepository(_context));
         _surveyInvitationRepository = new Lazy<ISurveyInvitationRepository>(() => new SurveyInvitationRepository(_context));
         _surveyConsentRepository = new Lazy<ISurveyConsentRepository>(() => new SurveyConsentRepository(_context));
+        _auditLogRepository = new Lazy<IAuditLogRepository>(() => new AuditLogRepository(_context));
     }
 
     public ISurveyRepository Surveys => _surveyRepository.Value;
@@ -55,6 +57,7 @@ public sealed class RepositoryManager : IRepositoryManager
     public IPatientVisitRepository PatientVisits => _patientVisitRepository.Value;
     public ISurveyInvitationRepository SurveyInvitations => _surveyInvitationRepository.Value;
     public ISurveyConsentRepository SurveyConsents => _surveyConsentRepository.Value;
+    public IAuditLogRepository AuditLogs => _auditLogRepository.Value;
 
     public async Task<AppIAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
