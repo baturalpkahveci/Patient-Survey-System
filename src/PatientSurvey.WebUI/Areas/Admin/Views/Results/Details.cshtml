@@ -12,8 +12,10 @@
     </div>
 
     <div class="detail-grid">
+        <div><span>Hasta</span><strong>@result.PatientName</strong></div>
         <div><span>Bölüm</span><strong>@result.DepartmentName</strong></div>
         <div><span>Tarih</span><strong>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</strong></div>
+        <div><span>Ortalama</span><strong><span class="score-badge @ScoreClass(result.AverageScore)">@(result.AverageScore?.ToString("0.00") ?? "-")</span></strong></div>
     </div>
 
     <table class="admin-table">
@@ -46,6 +48,21 @@
             QuestionType.Text => string.IsNullOrWhiteSpace(answer.TextValue) ? "-" : answer.TextValue,
             QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayır") : "-",
             _ => "-"
+        };
+    }
+
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
         };
     }
 }

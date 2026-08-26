@@ -11,6 +11,11 @@ public interface IRepositoryManager
     ISurveyResponseRepository SurveyResponses { get; }
     IRoleRepository Roles { get; }
     IUserRepository Users { get; }
+    IDoctorRepository Doctors { get; }
+    IPatientRepository Patients { get; }
+    IPatientVisitRepository PatientVisits { get; }
+    ISurveyInvitationRepository SurveyInvitations { get; }
+    ISurveyConsentRepository SurveyConsents { get; }
     Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task<int> SaveAsync(CancellationToken cancellationToken = default);
 }

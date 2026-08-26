@@ -2,6 +2,9 @@
     var currentArea = ViewContext.RouteData.Values["area"]?.ToString() ?? string.Empty;
     var isAdminArea = currentArea == "Admin";
     var isManagerArea = currentArea == "Manager";
+    var isDoctorArea = currentArea == "Doctor";
+    var doctorDisplayName = User.FindFirst("doctor_display_name")?.Value;
+    var doctorDepartmentName = User.FindFirst("doctor_department_name")?.Value;
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -31,6 +34,17 @@
                     {
                         <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Manager Paneli</a>
                     }
+                    else if (User.IsInRole("Doctor"))
+                    {
+                        <a class="@(isDoctorArea ? "is-active" : null)" asp-area="Doctor" asp-controller="Dashboard" asp-action="Index">Doktor Paneli</a>
+                        <span class="doctor-top-profile">
+                            <strong>@(doctorDisplayName ?? User.Identity?.Name ?? "Doktor")</strong>
+                            @if (!string.IsNullOrWhiteSpace(doctorDepartmentName))
+                            {
+                                <small>@doctorDepartmentName</small>
+                            }
+                        </span>
+                    }
                     else
                     {
                         <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Paneli</a>
@@ -55,6 +69,14 @@
                     <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                     <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
                 }
+                else if (User.IsInRole("Doctor"))
+                {
+                    <a class="@(isDoctorArea ? "is-active" : null)" asp-area="Doctor" asp-controller="Dashboard" asp-action="Index">Özet</a>
+                    <a asp-area="Doctor" asp-controller="Surveys" asp-action="Index">Anketler</a>
+                    <a asp-area="Doctor" asp-controller="Patients" asp-action="Create">Hasta Kaydı</a>
+                    <a asp-area="Doctor" asp-controller="Tokens" asp-action="Index">Linkler</a>
+                    <a asp-area="Doctor" asp-controller="Results" asp-action="Index">Sonuçlar</a>
+                }
                 else
                 {
                     <a class="@(isAdminArea ? "is-active" : null)" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Özet</a>
@@ -62,7 +84,6 @@
                     <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
                     <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Linkler</a>
                     <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuçlar</a>
-                    <a asp-area="Admin" asp-controller="Reports" asp-action="Index">Raporlar</a>
                     <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanıcılar</a>
                 }
             </div>

@@ -1,36 +1,96 @@
-﻿@model CreateTokenViewModel
+@using PatientSurvey.Domain.Enums
+@model CreateTokenViewModel
 
 @{
-    ViewData["Title"] = "Yeni Anket Linki";
+    ViewData["Title"] = "Yeni Hasta Daveti";
 }
 
 <section class="admin-page">
-    <h1>Yeni Anket Linki</h1>
-
-    <form asp-action="Create" method="post" class="admin-form">
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-
-        <div class="field-block">
-            <label asp-for="SurveyId">Anket</label>
-            <select asp-for="SurveyId">
-                <option value="">Anket seçin</option>
-                @foreach (var survey in Model.Surveys.Where(survey => survey.IsActive))
-                {
-                    <option value="@survey.Id">@survey.Title</option>
-                }
-            </select>
-            <span asp-validation-for="SurveyId" class="field-validation"></span>
+    @if (Model.CreatedInvitation is not null)
+    {
+        var createdUrl = $"{Model.SurveyUrlPrefix}{Model.CreatedInvitation.Token}";
+        <div class="success-panel">
+            <h1>Başarılı</h1>
+            <div class="copy-row">
+                <input class="copy-input" value="@createdUrl" readonly data-copy-source />
+                <button type="button" class="secondary-button" data-copy-button>Linki Kopyala</button>
+            </div>
         </div>
+    }
+    else
+    {
+        <h1>Yeni Hasta Daveti</h1>
 
-        <div class="field-block">
-            <label asp-for="ExpiresAtUtc">Son kullanma tarihi</label>
-            <input asp-for="ExpiresAtUtc" type="datetime-local" />
-            <span asp-validation-for="ExpiresAtUtc" class="field-validation"></span>
-        </div>
+        <form asp-action="Create" method="post" class="admin-form">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
-        <button type="submit" class="primary-button">Link Üret</button>
-    </form>
+            <div class="field-block">
+                <label asp-for="SurveyId">Anket</label>
+                <select asp-for="SurveyId">
+                    <option value="">Anket seçin</option>
+                    @foreach (var survey in Model.Surveys.Where(survey => survey.IsActive))
+                    {
+                        <option value="@survey.Id">@survey.Title (@(survey.IsGeneral ? "Genel" : "Hedefli"))</option>
+                    }
+                </select>
+                <span asp-validation-for="SurveyId" class="field-validation"></span>
+            </div>
+
+            <div class="field-grid">
+                <div class="field-block">
+                    <label asp-for="PatientFirstName">Hasta Adı</label>
+                    <input asp-for="PatientFirstName" />
+                    <span asp-validation-for="PatientFirstName" class="field-validation"></span>
+                </div>
+
+                <div class="field-block">
+                    <label asp-for="PatientLastName">Hasta Soyadı</label>
+                    <input asp-for="PatientLastName" />
+                    <span asp-validation-for="PatientLastName" class="field-validation"></span>
+                </div>
+            </div>
+
+            <div class="field-grid">
+                <div class="field-block">
+                    <label asp-for="TcIdentityNumber">T.C. Kimlik Numarası</label>
+                    <input asp-for="TcIdentityNumber" inputmode="numeric" autocomplete="off" />
+                    <span asp-validation-for="TcIdentityNumber" class="field-validation"></span>
+                </div>
+
+                <div class="field-block">
+                    <label asp-for="PhoneNumber">Telefon</label>
+                    <input asp-for="PhoneNumber" />
+                    <span asp-validation-for="PhoneNumber" class="field-validation"></span>
+                </div>
+            </div>
+
+            <div class="field-grid">
+                <div class="field-block">
+                    <label asp-for="Email">E-posta</label>
+                    <input asp-for="Email" />
+                    <span asp-validation-for="Email" class="field-validation"></span>
+                </div>
+
+                <div class="field-block">
+                    <label asp-for="ExpiresAtUtc">Son kullanma tarihi</label>
+                    <input asp-for="ExpiresAtUtc" type="datetime-local" />
+                    <span asp-validation-for="ExpiresAtUtc" class="field-validation"></span>
+                </div>
+            </div>
+
+            <div class="field-block">
+                <label asp-for="DeliveryMethod">Gönderim Yöntemi</label>
+                <select asp-for="DeliveryMethod">
+                    <option value="@SurveyDeliveryMethod.LinkOnly">Link Only</option>
+                    <option value="@SurveyDeliveryMethod.Sms">SMS</option>
+                    <option value="@SurveyDeliveryMethod.Email">E-posta</option>
+                </select>
+            </div>
+
+            <button type="submit" class="primary-button">Davet Linki Oluştur</button>
+        </form>
+    }
 </section>
 
 @section Scripts {

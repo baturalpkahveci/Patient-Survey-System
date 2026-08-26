@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.Survey;
 using PatientSurvey.Application.Services;
@@ -11,58 +11,119 @@ namespace PatientSurvey.WebUI.Areas.Manager.Controllers;
 public sealed class TokensController : Controller
 {
     private readonly SurveyAccessTokenService _tokenService;
-    private readonly SurveyService _surveyService;
 
-    public TokensController(SurveyAccessTokenService tokenService, SurveyService surveyService)
+    public TokensController(SurveyAccessTokenService tokenService)
     {
         _tokenService = tokenService;
-        _surveyService = surveyService;
     }
 
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        string? search,
+        int? surveyId,
+        string? status,
+        string? deliveryStatus,
+        string? surveyScope,
+        CancellationToken cancellationToken)
     {
+        var tokens = await _tokenService.GetTokensAsync(cancellationToken);
+        var filtered = ApplyFilters(tokens, search, surveyId, status, deliveryStatus, surveyScope).ToArray();
+
         return View(new TokenIndexViewModel
         {
-            Tokens = await _tokenService.GetTokensAsync(cancellationToken),
-            SurveyUrlPrefix = $"{Request.Scheme}://{Request.Host}/Survey/"
+            Tokens = filtered,
+            SurveyOptions = tokens
+                .GroupBy(token => new { token.SurveyId, token.SurveyTitle })
+                .OrderBy(group => group.Key.SurveyTitle)
+                .Select(group => new FilterOptionViewModel(group.Key.SurveyId.ToString(), group.Key.SurveyTitle))
+                .ToArray(),
+            DeliveryOptions = tokens
+                .Select(token => token.DeliveryStatus)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(value => value)
+                .Select(value => new FilterOptionViewModel(value, FormatDeliveryStatus(value)))
+                .ToArray(),
+            SurveyUrlPrefix = $"{Request.Scheme}://{Request.Host}/Survey/",
+            Search = search,
+            SurveyId = surveyId,
+            Status = status,
+            DeliveryStatus = deliveryStatus,
+            SurveyScope = surveyScope,
+            TotalCount = tokens.Count
         });
     }
 
-    public async Task<IActionResult> Create(int? surveyId, CancellationToken cancellationToken)
+    public IActionResult Create()
     {
-        return View(new CreateTokenViewModel
-        {
-            SurveyId = surveyId,
-            Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken)
-        });
+        return Forbid();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateTokenViewModel viewModel, CancellationToken cancellationToken)
+    public IActionResult Create(CreateTokenViewModel viewModel)
     {
-        if (!viewModel.SurveyId.HasValue)
+        return Forbid();
+    }
+
+    private static IEnumerable<SurveyAccessTokenListItemDto> ApplyFilters(
+        IReadOnlyCollection<SurveyAccessTokenListItemDto> tokens,
+        string? search,
+        int? surveyId,
+        string? status,
+        string? deliveryStatus,
+        string? surveyScope)
+    {
+        var filtered = tokens.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket seçin.");
+            var term = search.Trim();
+            filtered = filtered.Where(token =>
+                token.SurveyTitle.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || token.PatientName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || token.Token.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
-        if (!ModelState.IsValid)
+        if (surveyId.HasValue)
         {
-            viewModel.Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken);
-            return View(viewModel);
+            filtered = filtered.Where(token => token.SurveyId == surveyId.Value);
         }
 
-        var result = await _tokenService.CreateTokenAsync(
-            new CreateSurveyAccessTokenRequestDto(viewModel.SurveyId!.Value, viewModel.ExpiresAtUtc),
-            cancellationToken);
-
-        if (!result.IsSuccess)
+        filtered = status switch
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Anket linki oluşturulamadı.");
-            viewModel.Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken);
-            return View(viewModel);
+            "answered" => filtered.Where(token => token.HasResponse || token.UsedAtUtc.HasValue),
+            "ready" => filtered.Where(token => !token.HasResponse && !token.UsedAtUtc.HasValue && (!token.ExpiresAtUtc.HasValue || token.ExpiresAtUtc.Value > DateTimeOffset.UtcNow)),
+            "expired" => filtered.Where(token => !token.HasResponse && !token.UsedAtUtc.HasValue && token.ExpiresAtUtc.HasValue && token.ExpiresAtUtc.Value <= DateTimeOffset.UtcNow),
+            _ => filtered
+        };
+
+        if (!string.IsNullOrWhiteSpace(deliveryStatus))
+        {
+            filtered = filtered.Where(token => string.Equals(token.DeliveryStatus, deliveryStatus, StringComparison.OrdinalIgnoreCase));
         }
 
-        return RedirectToAction(nameof(Index));
+        if (string.Equals(surveyScope, "general", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(token => token.IsGeneralSurvey);
+        }
+        else if (string.Equals(surveyScope, "targeted", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(token => !token.IsGeneralSurvey);
+        }
+
+        return filtered;
+    }
+
+    private static string FormatDeliveryStatus(string value)
+    {
+        return value switch
+        {
+            "LinkCreated" => "Link oluşturuldu",
+            "Sent" => "Gönderildi",
+            "Failed" => "Başarısız",
+            "NotConfigured" => "Yapılandırılmadı",
+            "Legacy" => "Eski link",
+            _ => value
+        };
     }
 }

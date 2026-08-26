@@ -1,0 +1,160 @@
+@model DoctorCreateSurveyViewModel
+
+@{
+    ViewData["Title"] = "Yeni Anket";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>Yeni Anket</h1>
+            <p>@Model.DepartmentName bölümü için anket bilgilerini ve soruları tek ekranda hazırlayın.</p>
+        </div>
+        <a class="secondary-button" asp-action="Index">Anketlere Dön</a>
+    </div>
+
+    <form asp-action="Create" method="post" class="admin-form survey-builder-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <input asp-for="DepartmentName" type="hidden" />
+
+        <div class="field-block">
+            <label asp-for="Title">Başlık</label>
+            <input asp-for="Title" />
+            <span asp-validation-for="Title" class="field-validation"></span>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="Description">Açıklama</label>
+            <textarea asp-for="Description" rows="4"></textarea>
+        </div>
+
+        <label class="check-row">
+            <input asp-for="IsActive" />
+            <span>Aktif</span>
+        </label>
+
+        <div class="survey-question-editor" data-survey-question-editor>
+            <div class="admin-heading">
+                <div>
+                    <h2>Sorular</h2>
+                    <p>Anket kaydedilmeden önce tüm soruları buradan ekleyin.</p>
+                </div>
+                <button type="button" class="secondary-button" data-add-survey-question>Soru Ekle</button>
+            </div>
+
+            <div class="question-list" data-survey-question-list>
+                @for (var index = 0; index < Model.Questions.Count; index++)
+                {
+                    var question = Model.Questions[index];
+                    <div class="question-row" data-survey-question-row>
+                        <div class="question-row-header">
+                            <strong>Soru @(index + 1)</strong>
+                            <button type="button" class="secondary-button" data-remove-survey-question>Kaldır</button>
+                        </div>
+
+                        <div class="field-block">
+                            <label for="Questions_@(index)__Text">Soru metni</label>
+                            <textarea id="Questions_@(index)__Text" name="Questions[@index].Text" rows="3">@question.Text</textarea>
+                            @Html.ValidationMessage($"Questions[{index}].Text", null, new { @class = "field-validation" })
+                        </div>
+
+                        <div class="question-options-grid">
+                            <div class="field-block">
+                                <label for="Questions_@(index)__Type">Soru tipi</label>
+                                <select id="Questions_@(index)__Type" name="Questions[@index].Type">
+                                    @foreach (var type in Enum.GetValues<QuestionType>())
+                                    {
+                                        <option value="@type" selected="@(question.Type == type)">@QuestionTypeLabel(type)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="field-block">
+                                <label for="Questions_@(index)__DisplayOrder">Sıra</label>
+                                <input id="Questions_@(index)__DisplayOrder" name="Questions[@index].DisplayOrder" type="number" min="1" max="1000" value="@question.DisplayOrder" data-question-order />
+                                @Html.ValidationMessage($"Questions[{index}].DisplayOrder", null, new { @class = "field-validation" })
+                            </div>
+                        </div>
+
+                        <div class="question-checks">
+                            <label class="check-row">
+                                <input type="hidden" name="Questions[@index].IsRequired" value="false" />
+                                <input type="checkbox" name="Questions[@index].IsRequired" value="true" checked="@question.IsRequired" />
+                                <span>Zorunlu</span>
+                            </label>
+                            <label class="check-row">
+                                <input type="hidden" name="Questions[@index].IsActive" value="false" />
+                                <input type="checkbox" name="Questions[@index].IsActive" value="true" checked="@question.IsActive" />
+                                <span>Aktif</span>
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <template data-survey-question-template>
+                <div class="question-row" data-survey-question-row>
+                    <div class="question-row-header">
+                        <strong>Soru __number__</strong>
+                        <button type="button" class="secondary-button" data-remove-survey-question>Kaldır</button>
+                    </div>
+
+                    <div class="field-block">
+                        <label for="Questions___index____Text">Soru metni</label>
+                        <textarea id="Questions___index____Text" name="Questions[__index__].Text" rows="3"></textarea>
+                    </div>
+
+                    <div class="question-options-grid">
+                        <div class="field-block">
+                            <label for="Questions___index____Type">Soru tipi</label>
+                            <select id="Questions___index____Type" name="Questions[__index__].Type">
+                                @foreach (var type in Enum.GetValues<QuestionType>())
+                                {
+                                    <option value="@type">@QuestionTypeLabel(type)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="field-block">
+                            <label for="Questions___index____DisplayOrder">Sıra</label>
+                            <input id="Questions___index____DisplayOrder" name="Questions[__index__].DisplayOrder" type="number" min="1" max="1000" value="__number__" data-question-order />
+                        </div>
+                    </div>
+
+                    <div class="question-checks">
+                        <label class="check-row">
+                            <input type="hidden" name="Questions[__index__].IsRequired" value="false" />
+                            <input type="checkbox" name="Questions[__index__].IsRequired" value="true" checked />
+                            <span>Zorunlu</span>
+                        </label>
+                        <label class="check-row">
+                            <input type="hidden" name="Questions[__index__].IsActive" value="false" />
+                            <input type="checkbox" name="Questions[__index__].IsActive" value="true" checked />
+                            <span>Aktif</span>
+                        </label>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <button type="submit" class="primary-button">Anketi ve Soruları Oluştur</button>
+    </form>
+</section>
+
+@functions {
+    private static string QuestionTypeLabel(QuestionType type)
+    {
+        return type switch
+        {
+            QuestionType.Score => "Puan",
+            QuestionType.Text => "Metin",
+            QuestionType.Boolean => "Evet/Hayır",
+            _ => "-"
+        };
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

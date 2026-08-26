@@ -4,4 +4,10 @@ public sealed record UserListItemDto(
     int Id,
     string Username,
     string RoleName,
-    bool IsActive);
+    bool IsActive,
+    int? DoctorId = null,
+    string? DoctorFirstName = null,
+    string? DoctorLastName = null,
+    int? DoctorDepartmentId = null,
+    string? DoctorDepartmentName = null,
+    bool? DoctorIsActive = null);

@@ -7,4 +7,7 @@ public sealed class Department
     public bool IsActive { get; set; } = true;
 
     public ICollection<SurveyResponse> SurveyResponses { get; set; } = new List<SurveyResponse>();
+    public ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();
+    public ICollection<PatientVisit> PatientVisits { get; set; } = new List<PatientVisit>();
+    public ICollection<Survey> Surveys { get; set; } = new List<Survey>();
 }

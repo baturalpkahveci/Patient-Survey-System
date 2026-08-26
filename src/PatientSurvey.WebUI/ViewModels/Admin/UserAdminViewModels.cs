@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using PatientSurvey.Application.DTOs.Department;
 using PatientSurvey.Application.DTOs.User;
 
 namespace PatientSurvey.WebUI.ViewModels.Admin;
@@ -6,6 +7,14 @@ namespace PatientSurvey.WebUI.ViewModels.Admin;
 public sealed class UserIndexViewModel
 {
     public IReadOnlyCollection<UserListItemDto> Users { get; set; } = Array.Empty<UserListItemDto>();
+    public IReadOnlyCollection<RoleOptionDto> Roles { get; set; } = Array.Empty<RoleOptionDto>();
+    public IReadOnlyCollection<DepartmentDto> Departments { get; set; } = Array.Empty<DepartmentDto>();
+    public string? Search { get; set; }
+    public int? RoleId { get; set; }
+    public string? Status { get; set; }
+    public int? DepartmentId { get; set; }
+    public int? EditingUserId { get; set; }
+    public int TotalCount { get; set; }
 }
 
 public sealed class CreateUserViewModel
@@ -23,4 +32,22 @@ public sealed class CreateUserViewModel
 
     public bool IsActive { get; set; } = true;
     public IReadOnlyCollection<RoleOptionDto> Roles { get; set; } = Array.Empty<RoleOptionDto>();
+    public IReadOnlyCollection<DepartmentDto> Departments { get; set; } = Array.Empty<DepartmentDto>();
+    public string? DoctorFirstName { get; set; }
+    public string? DoctorLastName { get; set; }
+    public int? DoctorDepartmentId { get; set; }
+}
+
+public sealed class UpsertDoctorProfileViewModel
+{
+    public int UserId { get; set; }
+
+    [Required(ErrorMessage = "Doktor adı zorunludur.")]
+    public string FirstName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Doktor soyadı zorunludur.")]
+    public string LastName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Bölüm seçin.")]
+    public int? DepartmentId { get; set; }
 }

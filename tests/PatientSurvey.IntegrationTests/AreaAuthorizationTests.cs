@@ -50,19 +50,51 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
     }
 
+    [Fact]
+    public async Task Doctor_dashboard_allows_doctor_role()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Doctor");
+
+        var response = await client.GetAsync("/Doctor/Dashboard");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+    }
+
+    [Theory]
+    [InlineData("/Admin/Dashboard")]
+    [InlineData("/Admin/Results")]
+    [InlineData("/Admin/Users")]
+    public async Task Doctor_role_cannot_access_admin_endpoints(string path)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Doctor");
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     [Theory]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DashboardController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.UsersController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.SurveysController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.QuestionsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DepartmentsController), "Admin")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DoctorsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.TokensController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.ResultsController), "Admin")]
-    [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.ReportsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.DashboardController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.TokensController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.ResultsController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.ReportsController), "Manager")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.DashboardController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.SurveysController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.QuestionsController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.PatientsController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.TokensController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.ResultsController), "Doctor")]
     public void Management_controllers_declare_expected_role_boundary(Type controllerType, string expectedRoles)
     {
         var authorize = controllerType.GetCustomAttribute<AuthorizeAttribute>();
@@ -81,7 +113,8 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
             {
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Port=5432;Database=patient_survey_test;Username=test;Password=test"
+                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Port=5432;Database=patient_survey_test;Username=test;Password=test",
+                    ["PATIENT_IDENTITY_KEY"] = "integration-test-identity-key"
                 });
             });
 
@@ -98,6 +131,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
                 });
 
                 services.AddScoped<IManagementReportRepository, EmptyReportRepository>();
+                services.AddScoped<IDoctorManagementRepository, EmptyDoctorManagementRepository>();
             });
         }
     }
@@ -122,6 +156,86 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
         public Task<IReadOnlyCollection<Survey>> GetSurveysForReportsAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyCollection<Survey>>(Array.Empty<Survey>());
+        }
+
+        public Task<IReadOnlyCollection<Doctor>> GetDoctorsForReportsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Doctor>>(Array.Empty<Doctor>());
+        }
+    }
+
+    private sealed class EmptyDoctorManagementRepository : IDoctorManagementRepository
+    {
+        private readonly Department _department = new() { Id = 1, Name = "Kardiyoloji", IsActive = true };
+        private readonly User _doctorUser = new()
+        {
+            Id = 1,
+            Username = "doctor",
+            RoleId = 3,
+            Role = new Role { Id = 3, Name = "Doctor", IsActive = true },
+            IsActive = true
+        };
+
+        public Task<IReadOnlyCollection<Doctor>> GetAllDoctorsWithDepartmentsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Doctor>>(new[]
+            {
+                new Doctor
+                {
+                    Id = 1,
+                    UserId = 1,
+                    FirstName = "Test",
+                    LastName = "Doktor",
+                    DepartmentId = 1,
+                    Department = _department,
+                    User = _doctorUser,
+                    IsActive = true
+                }
+            });
+        }
+
+        public Task<Doctor?> GetDoctorByIdAsync(int doctorId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Doctor?>(new Doctor
+            {
+                Id = doctorId,
+                UserId = 1,
+                FirstName = "Test",
+                LastName = "Doktor",
+                DepartmentId = 1,
+                Department = _department,
+                User = _doctorUser,
+                IsActive = true
+            });
+        }
+
+        public Task<Doctor?> GetDoctorByUserIdAsync(int userId, CancellationToken cancellationToken)
+        {
+            return GetDoctorByIdAsync(1, cancellationToken);
+        }
+
+        public Task<IReadOnlyCollection<Department>> GetActiveDepartmentsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Department>>(new[] { _department });
+        }
+
+        public Task<Department?> GetDepartmentByIdAsync(int departmentId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Department?>(departmentId == _department.Id ? _department : null);
+        }
+
+        public Task<User?> GetUserByIdAsync(int userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<User?>(userId == _doctorUser.Id ? _doctorUser : null);
+        }
+
+        public void AddDoctor(Doctor doctor)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(1);
         }
     }
 

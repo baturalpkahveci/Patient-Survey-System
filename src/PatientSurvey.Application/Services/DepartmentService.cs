@@ -35,7 +35,9 @@ public sealed class DepartmentService
                 department.Id,
                 department.Name,
                 department.IsActive,
-                department.SurveyResponses.Count))
+                department.SurveyResponses.Count,
+                department.Surveys.Count,
+                department.Doctors.Count))
             .ToArray();
     }
 
@@ -60,6 +62,32 @@ public sealed class DepartmentService
             IsActive = request.IsActive
         });
 
+        await _adminRepository.SaveChangesAsync(cancellationToken);
+        return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult> UpdateDepartmentAsync(
+        UpdateDepartmentRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var name = request.Name.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Failure("department_name_required", "Bölüm adı zorunludur.");
+        }
+
+        var department = await _adminRepository.GetDepartmentByIdAsync(request.Id, cancellationToken);
+        if (department is null)
+        {
+            return ServiceResult.Failure("department_not_found", "Bölüm bulunamadı.");
+        }
+
+        if (await _adminRepository.DepartmentNameExistsForAnotherAsync(department.Id, name, cancellationToken))
+        {
+            return ServiceResult.Failure("department_exists", "Bu bölüm zaten kayıtlı.");
+        }
+
+        department.Name = name;
         await _adminRepository.SaveChangesAsync(cancellationToken);
         return ServiceResult.Success();
     }

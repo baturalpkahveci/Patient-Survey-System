@@ -9,11 +9,15 @@ public static class DependencyInjection
     {
         services.AddScoped<SurveyService>();
         services.AddScoped<SurveySubmissionService>();
+        services.AddScoped<SurveyInvitationService>();
         services.AddScoped<SurveyAccessTokenService>();
         services.AddScoped<DepartmentService>();
         services.AddScoped<QuestionService>();
         services.AddScoped<UserService>();
         services.AddScoped<ReportService>();
+        services.AddScoped<DoctorService>();
+        services.AddSingleton<KvkkNoticeProvider>();
+        services.AddSingleton<Interfaces.IKvkkNoticeProvider>(provider => provider.GetRequiredService<KvkkNoticeProvider>());
 
         return services;
     }

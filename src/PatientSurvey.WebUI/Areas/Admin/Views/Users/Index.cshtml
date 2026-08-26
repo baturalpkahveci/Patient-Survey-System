@@ -1,4 +1,4 @@
-﻿@model UserIndexViewModel
+@model UserIndexViewModel
 
 @{
     ViewData["Title"] = "Kullanıcılar";
@@ -6,37 +6,168 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Kullanıcı Yönetimi</h1>
+        <div>
+            <h1>Kullanıcı Yönetimi</h1>
+            <p>Kullanıcıları filtreleyin, durumlarını yönetin ve doktor departmanlarını aynı ekrandan düzenleyin.</p>
+        </div>
         <a class="primary-button" asp-action="Create">Yeni Kullanıcı</a>
     </div>
 
+    @if (TempData["AdminMessage"] is string message)
+    {
+        <div class="validation-summary">@message</div>
+    }
+
+    <form asp-action="Index" method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label asp-for="Search">Arama</label>
+            <input asp-for="Search" placeholder="Kullanıcı veya doktor adı" />
+        </div>
+
+        <div class="field-block">
+            <label asp-for="RoleId">Rol</label>
+            <select asp-for="RoleId">
+                <option value="">Tüm roller</option>
+                @foreach (var role in Model.Roles)
+                {
+                    <option value="@role.Id">@role.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="Status">Durum</label>
+            <select asp-for="Status">
+                <option value="">Tümü</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+                <option value="doctor-missing-profile">Doktor profili eksik</option>
+            </select>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="DepartmentId">Doktor Bölümü</label>
+            <select asp-for="DepartmentId">
+                <option value="">Tüm bölümler</option>
+                @foreach (var department in Model.Departments)
+                {
+                    <option value="@department.Id">@department.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+            <span class="filter-summary">@Model.TotalCount kayıt</span>
+        </div>
+    </form>
+
     @if (Model.Users.Count == 0)
     {
-        <p>Henüz kullanıcı yok.</p>
+        <p>Bu filtrelerle eşleşen kullanıcı yok.</p>
     }
     else
     {
-        <table class="admin-table">
+        <table class="admin-table user-management-table">
             <thead>
                 <tr>
-                    <th>Kullanıcı adı</th>
+                    <th>Kullanıcı</th>
                     <th>Rol</th>
                     <th>Durum</th>
-                    <th></th>
+                    <th>Doktor Profili</th>
+                    <th>İşlem</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var user in Model.Users)
                 {
+                    var isDoctor = string.Equals(user.RoleName, "Doctor", StringComparison.OrdinalIgnoreCase);
+                    var isEditing = Model.EditingUserId == user.Id;
                     <tr>
-                        <td>@user.Username</td>
+                        <td>
+                            <strong>@user.Username</strong>
+                            @if (isDoctor && !user.DoctorId.HasValue)
+                            {
+                                <span class="table-note">Doktor profili eksik</span>
+                            }
+                        </td>
                         <td>@user.RoleName</td>
                         <td>@(user.IsActive ? "Aktif" : "Pasif")</td>
                         <td>
-                            <form asp-action="Toggle" asp-route-id="@user.Id" method="post" class="inline-form">
+                            @if (!isDoctor)
+                            {
+                                <span class="table-note">Doktor rolü değil</span>
+                            }
+                            else if (isEditing)
+                            {
+                                <span class="table-note">Düzenleniyor</span>
+                                <form asp-action="UpsertDoctorProfile" method="post" class="inline-grid-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="UserId" value="@user.Id" />
+                                    <input type="hidden" name="returnSearch" value="@Model.Search" />
+                                    <input type="hidden" name="returnRoleId" value="@Model.RoleId" />
+                                    <input type="hidden" name="returnStatus" value="@Model.Status" />
+                                    <input type="hidden" name="returnDepartmentId" value="@Model.DepartmentId" />
+
+                                    <input name="FirstName" value="@user.DoctorFirstName" placeholder="Ad" />
+                                    <input name="LastName" value="@user.DoctorLastName" placeholder="Soyad" />
+                                    <select name="DepartmentId">
+                                        <option value="">Bölüm seçin</option>
+                                        @foreach (var department in Model.Departments)
+                                        {
+                                            <option value="@department.Id" selected="@(department.Id == user.DoctorDepartmentId)">
+                                                @department.Name
+                                            </option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="secondary-button">Kaydet</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="doctor-profile-summary">
+                                    @if (user.DoctorId.HasValue)
+                                    {
+                                        <strong>@user.DoctorFirstName @user.DoctorLastName</strong>
+                                        <span>@(user.DoctorDepartmentName ?? "Bölüm yok")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="table-note">Profil bilgisi girilmemiş</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                @if (isDoctor)
+                                {
+                                    if (isEditing)
+                                    {
+                                        <a class="secondary-button"
+                                           asp-action="Index"
+                                           asp-route-search="@Model.Search"
+                                           asp-route-roleId="@Model.RoleId"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-departmentId="@Model.DepartmentId">Vazgeç</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="secondary-button"
+                                           asp-action="Index"
+                                           asp-route-search="@Model.Search"
+                                           asp-route-roleId="@Model.RoleId"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-departmentId="@Model.DepartmentId"
+                                           asp-route-editUserId="@user.Id">Düzenle</a>
+                                    }
+                                }
+                                <form asp-action="Toggle" asp-route-id="@user.Id" method="post" class="inline-form">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="secondary-button">@(user.IsActive ? "Pasif yap" : "Aktif yap")</button>
-                            </form>
+                                    <button type="submit" class="secondary-button">@(user.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }

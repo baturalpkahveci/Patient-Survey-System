@@ -18,6 +18,7 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
 
         builder.HasData(
             new Role { Id = 1, Name = "Admin", IsActive = true },
-            new Role { Id = 2, Name = "Manager", IsActive = true });
+            new Role { Id = 2, Name = "Manager", IsActive = true },
+            new Role { Id = 3, Name = "Doctor", IsActive = true });
     }
 }

@@ -55,7 +55,13 @@ public sealed class UserService
                 user.Id,
                 user.Username,
                 user.Role?.Name ?? string.Empty,
-                user.IsActive))
+                user.IsActive,
+                user.Doctor?.Id,
+                user.Doctor?.FirstName,
+                user.Doctor?.LastName,
+                user.Doctor?.DepartmentId,
+                user.Doctor?.Department?.Name,
+                user.Doctor?.IsActive))
             .ToArray();
     }
 
@@ -72,38 +78,49 @@ public sealed class UserService
         CreateUserRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        var result = await CreateUserAndReturnIdAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? ServiceResult.Success()
+            : ServiceResult.Failure(result.ErrorCode ?? "user_create_failed", result.Message ?? "Kullanıcı oluşturulamadı.");
+    }
+
+    public async Task<ServiceResult<int>> CreateUserAndReturnIdAsync(
+        CreateUserRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
         var username = request.Username.Trim();
         if (string.IsNullOrWhiteSpace(username))
         {
-            return ServiceResult.Failure("username_required", "Kullanıcı adı zorunludur.");
+            return ServiceResult<int>.Failure("username_required", "Kullanıcı adı zorunludur.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
         {
-            return ServiceResult.Failure("password_invalid", "Şifre en az 8 karakter olmalıdır.");
+            return ServiceResult<int>.Failure("password_invalid", "Şifre en az 8 karakter olmalıdır.");
         }
 
         var role = await _adminRepository.GetRoleByIdAsync(request.RoleId, cancellationToken);
         if (role is null || !role.IsActive)
         {
-            return ServiceResult.Failure("role_invalid", "Geçerli bir rol seçin.");
+            return ServiceResult<int>.Failure("role_invalid", "Geçerli bir rol seçin.");
         }
 
         if (await _adminRepository.UsernameExistsAsync(username, cancellationToken))
         {
-            return ServiceResult.Failure("username_exists", "Bu kullanıcı adı zaten kullanılıyor.");
+            return ServiceResult<int>.Failure("username_exists", "Bu kullanıcı adı zaten kullanılıyor.");
         }
 
-        _adminRepository.AddUser(new User
+        var user = new User
         {
             Username = username,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
             RoleId = role.Id,
             IsActive = request.IsActive
-        });
+        };
 
+        _adminRepository.AddUser(user);
         await _adminRepository.SaveChangesAsync(cancellationToken);
-        return ServiceResult.Success();
+        return ServiceResult<int>.Success(user.Id);
     }
 
     public async Task<ServiceResult> ToggleUserStatusAsync(

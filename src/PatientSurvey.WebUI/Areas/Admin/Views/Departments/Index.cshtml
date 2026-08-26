@@ -6,9 +6,17 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Bölümler</h1>
+        <div>
+            <h1>Bölümler</h1>
+            <p>Bölümlerin anket ve doktor bağlantılarını izleyin, isimlerini aynı ekrandan düzenleyin.</p>
+        </div>
         <a class="primary-button" asp-action="Create">Yeni Bölüm</a>
     </div>
+
+    @if (TempData["AdminMessage"] is string message)
+    {
+        <div class="validation-summary">@message</div>
+    }
 
     @if (Model.Departments.Count == 0)
     {
@@ -20,23 +28,53 @@
             <thead>
                 <tr>
                     <th>Bölüm</th>
+                    <th>Anket</th>
+                    <th>Doktor</th>
                     <th>Cevap</th>
                     <th>Durum</th>
-                    <th></th>
+                    <th>İşlem</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var department in Model.Departments)
                 {
+                    var isEditing = Model.EditingDepartmentId == department.Id;
                     <tr>
-                        <td>@department.Name</td>
+                        <td>
+                            @if (isEditing)
+                            {
+                                <span class="table-note">Düzenleniyor</span>
+                                <form asp-action="Update" method="post" class="inline-edit-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id" value="@department.Id" />
+                                    <input name="Name" value="@department.Name" />
+                                    <button type="submit" class="secondary-button">Kaydet</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <strong>@department.Name</strong>
+                            }
+                        </td>
+                        <td>@department.SurveyCount</td>
+                        <td>@department.DoctorCount</td>
                         <td>@department.ResponseCount</td>
                         <td>@(department.IsActive ? "Aktif" : "Pasif")</td>
                         <td>
-                            <form asp-action="Toggle" asp-route-id="@department.Id" method="post" class="inline-form">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="secondary-button">@(department.IsActive ? "Pasif yap" : "Aktif yap")</button>
-                            </form>
+                            <div class="row-actions">
+                                @if (isEditing)
+                                {
+                                    <a class="secondary-button" asp-action="Index">Vazgeç</a>
+                                }
+                                else
+                                {
+                                    <a class="secondary-button" asp-action="Index" asp-route-editDepartmentId="@department.Id">Düzenle</a>
+                                }
+                                <form asp-action="Toggle" asp-route-id="@department.Id" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="secondary-button">@(department.IsActive ? "Pasif yap" : "Aktif yap")</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }

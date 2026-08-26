@@ -1,0 +1,165 @@
+@using PatientSurvey.Application.DTOs.Response
+@model DoctorResultIndexViewModel
+
+@{
+    ViewData["Title"] = "Sonuçlar";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>Sonuçlar</h1>
+            <p>Hasta kimliği gizlenir; yalnızca kendi anketlerinizin cevap özetleri gösterilir.</p>
+        </div>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label for="surveyId">Anket</label>
+            <select id="surveyId" name="surveyId">
+                <option value="">Tüm anketler</option>
+                @foreach (var survey in Model.Surveys)
+                {
+                    <option value="@survey.Id" selected="@(Model.SurveyId == survey.Id)">@survey.Title</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="fromDate">Başlangıç</label>
+            <input id="fromDate" name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="toDate">Bitiş</label>
+            <input id="toDate" name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="minAverage">Min. Ortalama</label>
+            <input id="minAverage" name="minAverage" type="number" min="1" max="5" step="0.1" value="@(Model.MinAverage?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+        </div>
+    </form>
+
+    <p class="filter-summary">@Model.Results.Count / @Model.TotalCount gönderim gösteriliyor.</p>
+
+    @if (Model.Results.Count == 0)
+    {
+        <p>Filtreye uygun cevaplanmış anket yok.</p>
+    }
+    else
+    {
+        <table class="admin-table result-submission-table compact-table">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Gönderim</th>
+                    <th>Ortalama</th>
+                    <th>Cevaplar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var result in Model.Results)
+                {
+                    var detailId = $"doctor-result-detail-{result.Id}";
+                    <tr class="result-summary-row" data-result-toggle="@detailId" tabindex="0">
+                        <td>
+                            <strong>@result.SurveyTitle</strong>
+                            <span class="table-note">@result.DepartmentName</span>
+                        </td>
+                        <td>
+                            <strong>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</strong>
+                            <span class="table-note">@FormatInvitation(result)</span>
+                        </td>
+                        <td>
+                            <span class="score-badge @ScoreClass(result.AverageScore)">@FormatAverage(result.AverageScore)</span>
+                        </td>
+                        <td>
+                            <button type="button" class="secondary-button" data-result-toggle-button="@detailId">Cevapları Gör</button>
+                            <span class="table-note">@result.AnswerCount cevap</span>
+                        </td>
+                    </tr>
+                    <tr id="@detailId" class="result-detail-row" hidden>
+                        <td colspan="4">
+                            <div class="answer-stack">
+                                @foreach (var answer in Answers(result))
+                                {
+                                    <div class="answer-item">
+                                        <div>
+                                            <strong>@answer.DisplayOrder. @answer.QuestionText</strong>
+                                            <span>@FormatQuestionType(answer.QuestionType)</span>
+                                        </div>
+                                        <p>@FormatAnswer(answer)</p>
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@functions {
+    private static IReadOnlyCollection<SurveyResponseAnswerDto> Answers(SurveyResponseListItemDto result)
+    {
+        return result.Answers ?? Array.Empty<SurveyResponseAnswerDto>();
+    }
+
+    private static string FormatAverage(double? average)
+    {
+        return average.HasValue ? average.Value.ToString("0.00") : "-";
+    }
+
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
+        };
+    }
+
+    private static string FormatInvitation(SurveyResponseListItemDto result)
+    {
+        if (result.InvitationId.HasValue)
+        {
+            var visit = result.ExaminedAtUtc.HasValue
+                ? $"Muayene: {result.ExaminedAtUtc.Value.ToLocalTime():g}"
+                : "Muayene tarihi yok";
+            return $"Davet #{result.InvitationId.Value} | {visit}";
+        }
+
+        return "Genel anket gönderimi";
+    }
+
+    private static string FormatQuestionType(QuestionType type)
+    {
+        return type switch
+        {
+            QuestionType.Score => "Puan",
+            QuestionType.Text => "Metin",
+            QuestionType.Boolean => "Evet/Hayır",
+            _ => "-"
+        };
+    }
+
+    private static string FormatAnswer(SurveyResponseAnswerDto answer)
+    {
+        return answer.QuestionType switch
+        {
+            QuestionType.Score => answer.ScoreValue?.ToString() ?? "-",
+            QuestionType.Text => string.IsNullOrWhiteSpace(answer.TextValue) ? "-" : answer.TextValue,
+            QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayır") : "-",
+            _ => "-"
+        };
+    }
+}

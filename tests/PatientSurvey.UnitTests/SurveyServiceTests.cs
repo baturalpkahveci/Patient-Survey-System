@@ -122,6 +122,27 @@ public sealed class SurveyServiceTests
     }
 
     [Fact]
+    public async Task CreateSurveyAsync_rejects_general_survey_for_doctor_role()
+    {
+        var service = new SurveyService(
+            new FakeSurveyReadRepository(),
+            new FakeAdminSurveyRepository(),
+            new FixedClock(Now),
+            new FakeInvitationRepository());
+
+        var result = await service.CreateSurveyAsync(new CreateSurveyRequestDto(
+            "Doktor Anketi",
+            null,
+            true,
+            IsGeneral: true,
+            CreatedByUserId: 10,
+            CreatedByRole: "Doctor"));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("doctor_general_not_allowed", result.ErrorCode);
+    }
+
+    [Fact]
     public async Task ToggleSurveyStatusAsync_flips_status_or_returns_not_found()
     {
         var adminRepository = new FakeAdminSurveyRepository();
@@ -200,6 +221,35 @@ public sealed class SurveyServiceTests
             AddedSurveys.Add(survey);
         }
 
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
+    }
+
+    private sealed class FakeInvitationRepository : ISurveyInvitationRepository
+    {
+        public Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<Survey?> GetSurveyByIdAsync(int surveyId, bool trackChanges, CancellationToken cancellationToken) => Task.FromResult<Survey?>(null);
+        public Task<Doctor?> GetDoctorByIdAsync(int doctorId, CancellationToken cancellationToken) => Task.FromResult<Doctor?>(null);
+
+        public Task<Doctor?> GetDoctorByUserIdAsync(int userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Doctor?>(new Doctor
+            {
+                Id = 3,
+                UserId = userId,
+                DepartmentId = 5,
+                IsActive = true,
+                Department = new Department { Id = 5, Name = "Kardiyoloji", IsActive = true }
+            });
+        }
+
+        public Task<IReadOnlyCollection<Doctor>> GetActiveDoctorsByDepartmentAsync(int departmentId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Doctor>>(Array.Empty<Doctor>());
+        public Task<IReadOnlyCollection<Department>> GetActiveDepartmentsAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Department>>(Array.Empty<Department>());
+        public Task<Patient?> GetPatientByTcHashAsync(string tcIdentityLookupHash, CancellationToken cancellationToken) => Task.FromResult<Patient?>(null);
+        public Task<bool> TokenExistsAsync(string token, CancellationToken cancellationToken) => Task.FromResult(false);
+        public void AddPatient(Patient patient) { }
+        public void AddPatientVisit(PatientVisit visit) { }
+        public void AddSurveyInvitation(SurveyInvitation invitation) { }
+        public void AddToken(SurveyAccessToken token) { }
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
     }
 

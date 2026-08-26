@@ -39,14 +39,31 @@ public sealed class SurveySubmissionService
                 return validationFailure;
             }
 
-            var department = await _repository.GetDepartmentAsync(request.DepartmentId, cancellationToken);
-            if (department is null || !department.IsActive)
+            var invitationValidationFailure = ValidateInvitationState(accessToken!, request);
+            if (invitationValidationFailure is not null)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return Failure("inactive_department", "Lütfen geçerli bir bölüm seçin.");
+                return invitationValidationFailure;
             }
 
-            var survey = accessToken!.Survey!;
+            Department? department = null;
+            if (accessToken!.SurveyInvitationId is null)
+            {
+                if (!request.DepartmentId.HasValue)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Failure("inactive_department", "Lütfen geçerli bir bölüm seçin.");
+                }
+
+                department = await _repository.GetDepartmentAsync(request.DepartmentId.Value, cancellationToken);
+                if (department is null || !department.IsActive)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Failure("inactive_department", "Lütfen geçerli bir bölüm seçin.");
+                }
+            }
+
+            var survey = accessToken.Survey!;
             var activeQuestions = survey.Questions
                 .Where(question => question.IsActive)
                 .ToDictionary(question => question.Id);
@@ -61,7 +78,7 @@ public sealed class SurveySubmissionService
             var response = new SurveyResponse
             {
                 TokenId = accessToken.Id,
-                DepartmentId = department.Id,
+                DepartmentId = accessToken.SurveyInvitationId.HasValue ? survey.DepartmentId : department!.Id,
                 SubmittedAtUtc = _clock.UtcNow
             };
 
@@ -83,6 +100,16 @@ public sealed class SurveySubmissionService
 
             accessToken.UsedAtUtc = _clock.UtcNow;
             _repository.AddSurveyResponse(response);
+            if (accessToken.SurveyInvitationId.HasValue)
+            {
+                _repository.AddSurveyConsent(new SurveyConsent
+                {
+                    SurveyInvitationId = accessToken.SurveyInvitationId.Value,
+                    NoticeVersion = request.ConsentNoticeVersion!.Trim(),
+                    AcceptedAtUtc = _clock.UtcNow
+                });
+            }
+
             await _repository.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
@@ -121,6 +148,33 @@ public sealed class SurveySubmissionService
         if (!accessToken.Survey.IsActive)
         {
             return Failure("inactive_survey", "Bu anket bağlantısı geçersiz veya artık kullanılamıyor.");
+        }
+
+        return null;
+    }
+
+    private static ServiceResult<SubmitSurveyResultDto>? ValidateInvitationState(
+        SurveyAccessToken accessToken,
+        SubmitSurveyRequestDto request)
+    {
+        if (accessToken.SurveyInvitationId is null)
+        {
+            return null;
+        }
+
+        if (request.VerifiedSurveyInvitationId != accessToken.SurveyInvitationId)
+        {
+            return Failure("identity_required", "Bu anketi göndermek için kimlik doğrulama gereklidir.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ConsentNoticeVersion))
+        {
+            return Failure("kvkk_required", "Devam etmek için aydınlatma/onay adımını tamamlayın.");
+        }
+
+        if (accessToken.SurveyInvitation?.Consent is not null)
+        {
+            return Failure("used_token", "Bu anket daha önce gönderilmiş.");
         }
 
         return null;

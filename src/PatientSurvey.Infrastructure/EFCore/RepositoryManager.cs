@@ -20,6 +20,11 @@ public sealed class RepositoryManager : IRepositoryManager
     private readonly Lazy<ISurveyResponseRepository> _surveyResponseRepository;
     private readonly Lazy<IRoleRepository> _roleRepository;
     private readonly Lazy<InfraIUserRepository> _userRepository;
+    private readonly Lazy<IDoctorRepository> _doctorRepository;
+    private readonly Lazy<IPatientRepository> _patientRepository;
+    private readonly Lazy<IPatientVisitRepository> _patientVisitRepository;
+    private readonly Lazy<ISurveyInvitationRepository> _surveyInvitationRepository;
+    private readonly Lazy<ISurveyConsentRepository> _surveyConsentRepository;
 
     public RepositoryManager(AppDbContext context)
     {
@@ -31,6 +36,11 @@ public sealed class RepositoryManager : IRepositoryManager
         _surveyResponseRepository = new Lazy<ISurveyResponseRepository>(() => new SurveyResponseRepository(_context));
         _roleRepository = new Lazy<IRoleRepository>(() => new RoleRepository(_context));
         _userRepository = new Lazy<InfraIUserRepository>(() => new UserRepository(_context));
+        _doctorRepository = new Lazy<IDoctorRepository>(() => new DoctorRepository(_context));
+        _patientRepository = new Lazy<IPatientRepository>(() => new PatientRepository(_context));
+        _patientVisitRepository = new Lazy<IPatientVisitRepository>(() => new PatientVisitRepository(_context));
+        _surveyInvitationRepository = new Lazy<ISurveyInvitationRepository>(() => new SurveyInvitationRepository(_context));
+        _surveyConsentRepository = new Lazy<ISurveyConsentRepository>(() => new SurveyConsentRepository(_context));
     }
 
     public ISurveyRepository Surveys => _surveyRepository.Value;
@@ -40,6 +50,11 @@ public sealed class RepositoryManager : IRepositoryManager
     public ISurveyResponseRepository SurveyResponses => _surveyResponseRepository.Value;
     public IRoleRepository Roles => _roleRepository.Value;
     public InfraIUserRepository Users => _userRepository.Value;
+    public IDoctorRepository Doctors => _doctorRepository.Value;
+    public IPatientRepository Patients => _patientRepository.Value;
+    public IPatientVisitRepository PatientVisits => _patientVisitRepository.Value;
+    public ISurveyInvitationRepository SurveyInvitations => _surveyInvitationRepository.Value;
+    public ISurveyConsentRepository SurveyConsents => _surveyConsentRepository.Value;
 
     public async Task<AppIAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
@@ -55,7 +70,7 @@ public sealed class RepositoryManager : IRepositoryManager
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: UniqueViolation })
         {
-            throw new BusinessRuleException("Bu anket daha once gonderilmis.");
+            throw new BusinessRuleException("Bu anket daha önce gönderilmiş.");
         }
     }
 }

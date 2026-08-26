@@ -9,6 +9,8 @@ public sealed class ResultIndexViewModel
     public IReadOnlyCollection<FilterOptionViewModel> DepartmentOptions { get; set; } = Array.Empty<FilterOptionViewModel>();
     public int? SurveyId { get; set; }
     public string? DepartmentName { get; set; }
+    public string? PatientName { get; set; }
+    public string? SurveyScope { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     public double? MinAverage { get; set; }

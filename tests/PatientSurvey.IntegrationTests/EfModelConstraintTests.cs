@@ -18,16 +18,26 @@ public sealed class EfModelConstraintTests
         var tokenEntity = model.FindEntityType(typeof(SurveyAccessToken));
         var responseEntity = model.FindEntityType(typeof(SurveyResponse));
         var answerEntity = model.FindEntityType(typeof(Answer));
+        var doctorEntity = model.FindEntityType(typeof(Doctor));
+        var patientEntity = model.FindEntityType(typeof(Patient));
 
         Assert.NotNull(tokenEntity);
         Assert.NotNull(responseEntity);
         Assert.NotNull(answerEntity);
+        Assert.NotNull(doctorEntity);
+        Assert.NotNull(patientEntity);
 
         Assert.Contains(tokenEntity!.GetIndexes(), index =>
             index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(SurveyAccessToken.Token) }));
+        Assert.Contains(tokenEntity.GetIndexes(), index =>
+            index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(SurveyAccessToken.SurveyInvitationId) }));
 
         Assert.Contains(responseEntity!.GetIndexes(), index =>
             index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(SurveyResponse.TokenId) }));
+        Assert.Contains(doctorEntity!.GetIndexes(), index =>
+            index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(Doctor.UserId) }));
+        Assert.Contains(patientEntity!.GetIndexes(), index =>
+            index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(Patient.TcIdentityLookupHash) }));
 
         Assert.Contains(answerEntity!.GetIndexes(), index =>
             index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[]
@@ -47,11 +57,13 @@ public sealed class EfModelConstraintTests
         var question = model.FindEntityType(typeof(Question))!;
         var answer = model.FindEntityType(typeof(Answer))!;
         var user = model.FindEntityType(typeof(User))!;
+        var patient = model.FindEntityType(typeof(Patient))!;
 
         Assert.Equal("surveys", survey.GetTableName());
         Assert.Equal("questions", question.GetTableName());
         Assert.Equal("answers", answer.GetTableName());
         Assert.Equal("users", user.GetTableName());
+        Assert.Equal("patients", patient.GetTableName());
 
         Assert.Equal(200, survey.FindProperty(nameof(Survey.Title))!.GetMaxLength());
         Assert.False(survey.FindProperty(nameof(Survey.Title))!.IsNullable);
@@ -59,6 +71,7 @@ public sealed class EfModelConstraintTests
         Assert.False(question.FindProperty(nameof(Question.Text))!.IsNullable);
         Assert.Equal(4000, answer.FindProperty(nameof(Answer.TextValue))!.GetMaxLength());
         Assert.Equal(512, user.FindProperty(nameof(User.PasswordHash))!.GetMaxLength());
+        Assert.Equal(128, patient.FindProperty(nameof(Patient.TcIdentityLookupHash))!.GetMaxLength());
         Assert.Equal(typeof(int), question.FindProperty(nameof(Question.Type))!.GetProviderClrType());
         Assert.Equal(1, (int)QuestionType.Score);
     }
@@ -70,10 +83,15 @@ public sealed class EfModelConstraintTests
         var model = context.Model;
 
         AssertForeignKeyDeleteBehavior<SurveyAccessToken, Survey>(model, DeleteBehavior.Restrict);
+        AssertForeignKeyDeleteBehavior<SurveyAccessToken, SurveyInvitation>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<Question, Survey>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<SurveyResponse, SurveyAccessToken>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<SurveyResponse, Department>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<User, Role>(model, DeleteBehavior.Restrict);
+        AssertForeignKeyDeleteBehavior<Doctor, User>(model, DeleteBehavior.Restrict);
+        AssertForeignKeyDeleteBehavior<Doctor, Department>(model, DeleteBehavior.Restrict);
+        AssertForeignKeyDeleteBehavior<PatientVisit, Patient>(model, DeleteBehavior.Restrict);
+        AssertForeignKeyDeleteBehavior<SurveyInvitation, PatientVisit>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<Answer, Question>(model, DeleteBehavior.Restrict);
         AssertForeignKeyDeleteBehavior<Answer, SurveyResponse>(model, DeleteBehavior.Cascade);
     }
@@ -101,6 +119,33 @@ public sealed class EfModelConstraintTests
             && id is 2
             && name is "Manager"
             && isActive is true);
+
+        Assert.Contains(seedData, row =>
+            row.TryGetValue(nameof(Role.Id), out var id)
+            && row.TryGetValue(nameof(Role.Name), out var name)
+            && row.TryGetValue(nameof(Role.IsActive), out var isActive)
+            && id is 3
+            && name is "Doctor"
+            && isActive is true);
+    }
+
+    [Fact]
+    public void Model_defines_general_targeted_pair_check_constraints()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+        var surveyEntity = model.FindEntityType(typeof(Survey))!;
+        var visitEntity = model.FindEntityType(typeof(PatientVisit))!;
+
+        Assert.Contains(surveyEntity.GetCheckConstraints(), constraint =>
+            constraint.Name == "ck_surveys_doctor_department_pair"
+            && constraint.Sql.Contains("doctor_id IS NULL", StringComparison.Ordinal)
+            && constraint.Sql.Contains("department_id IS NOT NULL", StringComparison.Ordinal));
+
+        Assert.Contains(visitEntity.GetCheckConstraints(), constraint =>
+            constraint.Name == "ck_patient_visits_doctor_department_pair"
+            && constraint.Sql.Contains("doctor_id IS NULL", StringComparison.Ordinal)
+            && constraint.Sql.Contains("department_id IS NOT NULL", StringComparison.Ordinal));
     }
 
     [Fact]

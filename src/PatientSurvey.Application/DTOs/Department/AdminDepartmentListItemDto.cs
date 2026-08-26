@@ -4,4 +4,6 @@ public sealed record AdminDepartmentListItemDto(
     int Id,
     string Name,
     bool IsActive,
-    int ResponseCount);
+    int ResponseCount,
+    int SurveyCount,
+    int DoctorCount);

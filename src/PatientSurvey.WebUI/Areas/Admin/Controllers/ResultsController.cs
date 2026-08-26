@@ -20,13 +20,15 @@ public sealed class ResultsController : Controller
     public async Task<IActionResult> Index(
         int? surveyId,
         string? departmentName,
+        string? patientName,
+        string? surveyScope,
         DateTime? fromDate,
         DateTime? toDate,
         double? minAverage,
         CancellationToken cancellationToken)
     {
         var results = await _reportService.GetResultsAsync(cancellationToken);
-        var filtered = ApplyFilters(results, surveyId, departmentName, fromDate, toDate, minAverage).ToArray();
+        var filtered = ApplyFilters(results, surveyId, departmentName, patientName, surveyScope, fromDate, toDate, minAverage).ToArray();
 
         return View(new ResultIndexViewModel
         {
@@ -46,6 +48,8 @@ public sealed class ResultsController : Controller
                 .ToArray(),
             SurveyId = surveyId,
             DepartmentName = departmentName,
+            PatientName = patientName,
+            SurveyScope = surveyScope,
             FromDate = fromDate,
             ToDate = toDate,
             MinAverage = minAverage,
@@ -68,6 +72,8 @@ public sealed class ResultsController : Controller
         IReadOnlyCollection<SurveyResponseListItemDto> results,
         int? surveyId,
         string? departmentName,
+        string? patientName,
+        string? surveyScope,
         DateTime? fromDate,
         DateTime? toDate,
         double? minAverage)
@@ -82,6 +88,21 @@ public sealed class ResultsController : Controller
         if (!string.IsNullOrWhiteSpace(departmentName))
         {
             filtered = filtered.Where(result => string.Equals(result.DepartmentName, departmentName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(patientName))
+        {
+            var term = patientName.Trim();
+            filtered = filtered.Where(result => result.PatientName.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (string.Equals(surveyScope, "general", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(result => result.IsGeneralSurvey);
+        }
+        else if (string.Equals(surveyScope, "targeted", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = filtered.Where(result => !result.IsGeneralSurvey);
         }
 
         if (fromDate.HasValue)

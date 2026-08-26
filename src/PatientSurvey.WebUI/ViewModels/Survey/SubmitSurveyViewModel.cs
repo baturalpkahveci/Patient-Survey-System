@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using PatientSurvey.Domain.Enums;
 
 namespace PatientSurvey.WebUI.ViewModels.Survey;
@@ -6,11 +5,15 @@ namespace PatientSurvey.WebUI.ViewModels.Survey;
 public sealed class SubmitSurveyViewModel
 {
     public string Token { get; set; } = string.Empty;
+    public int? InvitationId { get; set; }
     public int SurveyId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? ConsentNoticeVersion { get; set; }
+    public string? ConsentNoticeText { get; set; }
+    public string TcIdentityNumber { get; set; } = string.Empty;
+    public bool KvkkAccepted { get; set; }
 
-    [Required(ErrorMessage = "Lütfen bölüm seçin.")]
     public int? DepartmentId { get; set; }
 
     public List<DepartmentOptionViewModel> Departments { get; set; } = new();
@@ -34,4 +37,20 @@ public sealed class SurveyQuestionViewModel
     public int? ScoreValue { get; set; }
     public string? TextValue { get; set; }
     public bool? BooleanValue { get; set; }
+}
+
+public sealed class SurveyIdentityViewModel
+{
+    public string Token { get; set; } = string.Empty;
+    public int InvitationId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+
+    public string TcIdentityNumber { get; set; } = string.Empty;
+
+    public bool KvkkAccepted { get; set; }
+
+    public string KvkkNoticeVersion { get; set; } = string.Empty;
+    public string KvkkNoticeText { get; set; } = string.Empty;
+    public string? FormError { get; set; }
 }

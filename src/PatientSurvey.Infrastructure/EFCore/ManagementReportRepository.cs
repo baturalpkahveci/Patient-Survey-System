@@ -30,8 +30,13 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
             .FindAll(trackChanges: false)
             .Include(response => response.Department)
             .Include(response => response.Answers)
+                .ThenInclude(answer => answer.Question)
             .Include(response => response.Token!)
                 .ThenInclude(token => token.Survey)
+            .Include(response => response.Token!)
+                .ThenInclude(token => token.SurveyInvitation!)
+                    .ThenInclude(invitation => invitation.PatientVisit!)
+                        .ThenInclude(visit => visit.Patient)
             .ToArrayAsync(cancellationToken);
     }
 
@@ -42,6 +47,10 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
             .Include(response => response.Department)
             .Include(response => response.Token!)
                 .ThenInclude(token => token.Survey)
+            .Include(response => response.Token!)
+                .ThenInclude(token => token.SurveyInvitation!)
+                    .ThenInclude(invitation => invitation.PatientVisit!)
+                        .ThenInclude(visit => visit.Patient)
             .Include(response => response.Answers)
                 .ThenInclude(answer => answer.Question)
             .FirstOrDefaultAsync(cancellationToken);
@@ -52,12 +61,29 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
         return await _repositoryManager.Surveys
             .FindAll(trackChanges: false)
             .Include(survey => survey.Questions)
+            .Include(survey => survey.Department)
+            .Include(survey => survey.Doctor!)
+                .ThenInclude(doctor => doctor.Department)
             .Include(survey => survey.AccessTokens)
                 .ThenInclude(token => token.SurveyResponse!)
                     .ThenInclude(response => response.Department)
             .Include(survey => survey.AccessTokens)
                 .ThenInclude(token => token.SurveyResponse!)
                     .ThenInclude(response => response.Answers)
+            .Include(survey => survey.AccessTokens)
+                .ThenInclude(token => token.SurveyInvitation!)
+                    .ThenInclude(invitation => invitation.PatientVisit!)
+                        .ThenInclude(visit => visit.Doctor!)
+                            .ThenInclude(doctor => doctor.Department)
+            .ToArrayAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Doctor>> GetDoctorsForReportsAsync(CancellationToken cancellationToken)
+    {
+        return await _repositoryManager.Doctors
+            .GetAllDoctors(trackChanges: false)
+            .Include(doctor => doctor.Department)
+            .Include(doctor => doctor.Surveys)
             .ToArrayAsync(cancellationToken);
     }
 }

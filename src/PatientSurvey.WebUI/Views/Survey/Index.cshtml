@@ -16,6 +16,7 @@
     <form asp-action="Submit" method="post" class="survey-form">
         @Html.AntiForgeryToken()
         <input asp-for="Token" type="hidden" />
+        <input asp-for="InvitationId" type="hidden" />
         <input asp-for="SurveyId" type="hidden" />
 
         @if (!string.IsNullOrWhiteSpace(Model.FormError))
@@ -23,17 +24,20 @@
             <div class="validation-summary">@Model.FormError</div>
         }
 
-        <div class="field-block">
-            <label asp-for="DepartmentId">Bölüm</label>
-            <select asp-for="DepartmentId">
-                <option value="">Bölüm seçin</option>
-                @foreach (var department in Model.Departments)
-                {
-                    <option value="@department.Id">@department.Name</option>
-                }
-            </select>
-            <span asp-validation-for="DepartmentId" class="field-validation"></span>
-        </div>
+        @if (Model.Departments.Count > 0)
+        {
+            <div class="field-block">
+                <label asp-for="DepartmentId">Bölüm</label>
+                <select asp-for="DepartmentId">
+                    <option value="">Bölüm seçin</option>
+                    @foreach (var department in Model.Departments)
+                    {
+                        <option value="@department.Id">@department.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="DepartmentId" class="field-validation"></span>
+            </div>
+        }
 
         <ol class="question-list">
             @for (var i = 0; i < Model.Questions.Count; i++)
@@ -75,6 +79,34 @@
                 </li>
             }
         </ol>
+
+        @if (Model.InvitationId.HasValue)
+        {
+            <section class="survey-consent-section">
+                <h2>Kimlik ve KVKK Onayı</h2>
+
+                <div class="field-block">
+                    <label asp-for="TcIdentityNumber">T.C. Kimlik Numarası</label>
+                    <input asp-for="TcIdentityNumber" inputmode="numeric" autocomplete="off" />
+                    <span asp-validation-for="TcIdentityNumber" class="field-validation"></span>
+                </div>
+
+                <section class="kvkk-notice">
+                    <button type="button" class="link-button" data-kvkk-toggle>Aydınlatma Metni</button>
+                    <p data-kvkk-text hidden>@Model.ConsentNoticeText</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.ConsentNoticeVersion))
+                    {
+                        <small>Versiyon @Model.ConsentNoticeVersion</small>
+                    }
+                </section>
+
+                <label class="check-row">
+                    <input asp-for="KvkkAccepted" />
+                    <span>KVKK Aydınlatma Metni'ni okudum ve onay durumumu bildiriyorum.</span>
+                </label>
+                <span asp-validation-for="KvkkAccepted" class="field-validation"></span>
+            </section>
+        }
 
         <button type="submit" class="primary-button">Gönder</button>
     </form>

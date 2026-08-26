@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PatientSurvey.Application.DTOs.Doctor;
 using PatientSurvey.Application.DTOs.User;
 using PatientSurvey.Application.Services;
 using PatientSurvey.WebUI.ViewModels.Admin;
@@ -11,17 +12,38 @@ namespace PatientSurvey.WebUI.Areas.Admin.Controllers;
 public sealed class UsersController : Controller
 {
     private readonly UserService _userService;
+    private readonly DoctorService _doctorService;
 
-    public UsersController(UserService userService)
+    public UsersController(UserService userService, DoctorService doctorService)
     {
         _userService = userService;
+        _doctorService = doctorService;
     }
 
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        string? search,
+        int? roleId,
+        string? status,
+        int? departmentId,
+        int? editUserId,
+        CancellationToken cancellationToken)
     {
+        var roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+        var departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken);
+        var users = await _userService.GetUsersAsync(cancellationToken);
+        var filtered = ApplyFilters(users, roles, search, roleId, status, departmentId).ToArray();
+
         return View(new UserIndexViewModel
         {
-            Users = await _userService.GetUsersAsync(cancellationToken)
+            Users = filtered,
+            Roles = roles,
+            Departments = departments,
+            Search = search,
+            RoleId = roleId,
+            Status = status,
+            DepartmentId = departmentId,
+            EditingUserId = editUserId,
+            TotalCount = filtered.Length
         });
     }
 
@@ -29,7 +51,8 @@ public sealed class UsersController : Controller
     {
         return View(new CreateUserViewModel
         {
-            Roles = await _userService.GetRoleOptionsAsync(cancellationToken)
+            Roles = await _userService.GetRoleOptionsAsync(cancellationToken),
+            Departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken)
         });
     }
 
@@ -37,18 +60,44 @@ public sealed class UsersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateUserViewModel viewModel, CancellationToken cancellationToken)
     {
+        var roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+        var departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken);
+        var selectedRole = viewModel.RoleId.HasValue
+            ? roles.FirstOrDefault(role => role.Id == viewModel.RoleId.Value)
+            : null;
+        var isDoctor = string.Equals(selectedRole?.Name, "Doctor", StringComparison.OrdinalIgnoreCase);
+
         if (!viewModel.RoleId.HasValue)
         {
             ModelState.AddModelError(nameof(viewModel.RoleId), "Rol seçin.");
         }
 
+        if (isDoctor)
+        {
+            if (string.IsNullOrWhiteSpace(viewModel.DoctorFirstName))
+            {
+                ModelState.AddModelError(nameof(viewModel.DoctorFirstName), "Doktor adı zorunludur.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viewModel.DoctorLastName))
+            {
+                ModelState.AddModelError(nameof(viewModel.DoctorLastName), "Doktor soyadı zorunludur.");
+            }
+
+            if (!viewModel.DoctorDepartmentId.HasValue)
+            {
+                ModelState.AddModelError(nameof(viewModel.DoctorDepartmentId), "Bölüm seçin.");
+            }
+        }
+
         if (!ModelState.IsValid)
         {
-            viewModel.Roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+            viewModel.Roles = roles;
+            viewModel.Departments = departments;
             return View(viewModel);
         }
 
-        var result = await _userService.CreateUserAsync(
+        var result = await _userService.CreateUserAndReturnIdAsync(
             new CreateUserRequestDto(
                 viewModel.Username,
                 viewModel.Password,
@@ -59,11 +108,90 @@ public sealed class UsersController : Controller
         if (!result.IsSuccess)
         {
             ModelState.AddModelError(string.Empty, result.Message ?? "Kullanıcı oluşturulamadı.");
-            viewModel.Roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+            viewModel.Roles = roles;
+            viewModel.Departments = departments;
             return View(viewModel);
         }
 
+        if (isDoctor)
+        {
+            var doctorResult = await _doctorService.UpsertDoctorProfileAsync(
+                new UpsertDoctorProfileRequestDto(
+                    result.Value,
+                    viewModel.DoctorFirstName ?? string.Empty,
+                    viewModel.DoctorLastName ?? string.Empty,
+                    viewModel.DoctorDepartmentId.GetValueOrDefault()),
+                cancellationToken);
+
+            if (!doctorResult.IsSuccess)
+            {
+                TempData["AdminMessage"] = $"Kullanıcı oluşturuldu fakat doktor profili kaydedilemedi: {doctorResult.Message}";
+                return RedirectToAction(nameof(Index), new { status = "doctor-missing-profile" });
+            }
+        }
+
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpsertDoctorProfile(
+        UpsertDoctorProfileViewModel viewModel,
+        string? returnSearch,
+        int? returnRoleId,
+        string? returnStatus,
+        int? returnDepartmentId,
+        CancellationToken cancellationToken)
+    {
+        if (!viewModel.DepartmentId.HasValue)
+        {
+            ModelState.AddModelError(nameof(viewModel.DepartmentId), "Bölüm seçin.");
+        }
+
+        var selectedDepartmentId = viewModel.DepartmentId.GetValueOrDefault();
+
+        if (!ModelState.IsValid)
+        {
+            TempData["AdminMessage"] = "Doktor bilgileri eksik.";
+            return RedirectToAction(nameof(Index), new
+            {
+                search = returnSearch,
+                roleId = returnRoleId,
+                status = returnStatus,
+                departmentId = returnDepartmentId,
+                editUserId = viewModel.UserId
+            });
+        }
+
+        var result = await _doctorService.UpsertDoctorProfileAsync(
+            new UpsertDoctorProfileRequestDto(
+                viewModel.UserId,
+                viewModel.FirstName,
+                viewModel.LastName,
+                selectedDepartmentId),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            TempData["AdminMessage"] = result.Message;
+            return RedirectToAction(nameof(Index), new
+            {
+                search = returnSearch,
+                roleId = returnRoleId,
+                status = returnStatus,
+                departmentId = returnDepartmentId,
+                editUserId = viewModel.UserId
+            });
+        }
+
+        TempData["AdminMessage"] = "Doktor bilgileri kaydedildi.";
+        return RedirectToAction(nameof(Index), new
+        {
+            search = returnSearch,
+            roleId = returnRoleId,
+            status = returnStatus,
+            departmentId = returnDepartmentId
+        });
     }
 
     [HttpPost]
@@ -77,5 +205,51 @@ public sealed class UsersController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private static IEnumerable<UserListItemDto> ApplyFilters(
+        IReadOnlyCollection<UserListItemDto> users,
+        IReadOnlyCollection<RoleOptionDto> roles,
+        string? search,
+        int? roleId,
+        string? status,
+        int? departmentId)
+    {
+        var filtered = users.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            filtered = filtered.Where(user =>
+                user.Username.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || (user.DoctorFirstName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (user.DoctorLastName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        if (roleId.HasValue)
+        {
+            var roleName = roles.FirstOrDefault(role => role.Id == roleId.Value)?.Name;
+            if (!string.IsNullOrWhiteSpace(roleName))
+            {
+                filtered = filtered.Where(user => string.Equals(user.RoleName, roleName, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        filtered = status switch
+        {
+            "active" => filtered.Where(user => user.IsActive),
+            "inactive" => filtered.Where(user => !user.IsActive),
+            "doctor-missing-profile" => filtered.Where(user =>
+                string.Equals(user.RoleName, "Doctor", StringComparison.OrdinalIgnoreCase)
+                && !user.DoctorId.HasValue),
+            _ => filtered
+        };
+
+        if (departmentId.HasValue)
+        {
+            filtered = filtered.Where(user => user.DoctorDepartmentId == departmentId.Value);
+        }
+
+        return filtered;
     }
 }

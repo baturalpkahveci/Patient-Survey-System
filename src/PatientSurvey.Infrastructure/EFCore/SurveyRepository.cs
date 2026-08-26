@@ -24,6 +24,9 @@ public sealed class SurveyRepository :
     {
         return FindByCondition(survey => survey.Id == surveyId, trackChanges)
             .Include(survey => survey.Questions)
+            .Include(survey => survey.Doctor)
+                .ThenInclude(doctor => doctor!.Department)
+            .Include(survey => survey.Department)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

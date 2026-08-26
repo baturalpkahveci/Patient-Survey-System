@@ -11,11 +11,13 @@ namespace PatientSurvey.WebUI.Controllers;
 public sealed class AccountController : Controller
 {
     private readonly UserService _userService;
+    private readonly DoctorService _doctorService;
     private readonly ILogger<AccountController> _logger;
 
-    public AccountController(UserService userService, ILogger<AccountController> logger)
+    public AccountController(UserService userService, DoctorService doctorService, ILogger<AccountController> logger)
     {
         _userService = userService;
+        _doctorService = doctorService;
         _logger = logger;
     }
 
@@ -50,6 +52,16 @@ public sealed class AccountController : Controller
             new(ClaimTypes.Role, result.Value.RoleName)
         };
 
+        if (string.Equals(result.Value.RoleName, "Doctor", StringComparison.OrdinalIgnoreCase))
+        {
+            var profile = await _doctorService.GetDoctorProfileAsync(result.Value.Id, cancellationToken);
+            if (profile.IsSuccess && profile.Value is not null)
+            {
+                claims.Add(new Claim("doctor_display_name", $"Dr. {profile.Value.FirstName} {profile.Value.LastName}"));
+                claims.Add(new Claim("doctor_department_name", profile.Value.DepartmentName));
+            }
+        }
+
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
@@ -58,9 +70,12 @@ public sealed class AccountController : Controller
             return Redirect(viewModel.ReturnUrl);
         }
 
-        var area = string.Equals(result.Value.RoleName, "Manager", StringComparison.OrdinalIgnoreCase)
-            ? "Manager"
-            : "Admin";
+        var area = result.Value.RoleName switch
+        {
+            "Manager" => "Manager",
+            "Doctor" => "Doctor",
+            _ => "Admin"
+        };
 
         return RedirectToAction("Index", "Dashboard", new { area });
     }

@@ -117,6 +117,53 @@ public sealed class UserServiceTests
         Assert.Equal(1, adminRepository.SaveCount);
     }
 
+    [Fact]
+    public async Task GetUsersAsync_includes_doctor_profile_metadata_without_hiding_missing_profiles()
+    {
+        var adminRepository = new FakeAdminUserRepository();
+        adminRepository.Users.AddRange(new[]
+        {
+            new User
+            {
+                Id = 2,
+                Username = "doctor-with-profile",
+                IsActive = true,
+                Role = new Role { Id = 3, Name = "Doctor", IsActive = true },
+                Doctor = new Doctor
+                {
+                    Id = 9,
+                    FirstName = "Ayşe",
+                    LastName = "Yılmaz",
+                    DepartmentId = 4,
+                    Department = new Department { Id = 4, Name = "Dahiliye", IsActive = true },
+                    IsActive = true
+                }
+            },
+            new User
+            {
+                Id = 1,
+                Username = "doctor-missing-profile",
+                IsActive = true,
+                Role = new Role { Id = 3, Name = "Doctor", IsActive = true }
+            }
+        });
+        var service = CreateService(adminRepository: adminRepository);
+
+        var users = await service.GetUsersAsync();
+
+        Assert.Equal(2, users.Count);
+        var missingProfile = Assert.Single(users, user => user.Username == "doctor-missing-profile");
+        Assert.Null(missingProfile.DoctorId);
+
+        var doctor = Assert.Single(users, user => user.Username == "doctor-with-profile");
+        Assert.Equal(9, doctor.DoctorId);
+        Assert.Equal("Ayşe", doctor.DoctorFirstName);
+        Assert.Equal("Yılmaz", doctor.DoctorLastName);
+        Assert.Equal(4, doctor.DoctorDepartmentId);
+        Assert.Equal("Dahiliye", doctor.DoctorDepartmentName);
+        Assert.True(doctor.DoctorIsActive);
+    }
+
     private static UserService CreateService(
         FakeUserRepository? repository = null,
         FakeAdminUserRepository? adminRepository = null)

@@ -160,6 +160,7 @@ public sealed class SurveySubmissionServiceTests
         public Department? Department { get; set; }
         public FakeTransaction? Transaction { get; private set; }
         public List<SurveyResponse> AddedResponses { get; } = new();
+        public List<SurveyConsent> AddedConsents { get; } = new();
 
         public static FakeSubmissionRepository Valid(DateTimeOffset now)
         {
@@ -218,6 +219,11 @@ public sealed class SurveySubmissionServiceTests
         {
             response.Id = 500 + AddedResponses.Count;
             AddedResponses.Add(response);
+        }
+
+        public void AddSurveyConsent(SurveyConsent consent)
+        {
+            AddedConsents.Add(consent);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken)

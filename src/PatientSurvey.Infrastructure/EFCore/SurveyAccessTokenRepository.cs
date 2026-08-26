@@ -21,6 +21,11 @@ public sealed class SurveyAccessTokenRepository :
     {
         return FindByCondition(accessToken => accessToken.Token == token, trackChanges)
             .Include(accessToken => accessToken.SurveyResponse)
+            .Include(accessToken => accessToken.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.PatientVisit!)
+                .ThenInclude(visit => visit.Patient)
+            .Include(accessToken => accessToken.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.Consent)
             .Include(accessToken => accessToken.Survey!)
                 .ThenInclude(survey => survey.Questions)
             .FirstOrDefaultAsync(cancellationToken);
@@ -35,6 +40,11 @@ public sealed class SurveyAccessTokenRepository :
                 trackChanges: false)
             .Include(accessToken => accessToken.Survey!)
                 .ThenInclude(survey => survey.Questions)
+            .Include(accessToken => accessToken.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.PatientVisit!)
+                .ThenInclude(visit => visit.Patient)
+            .Include(accessToken => accessToken.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.Consent)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

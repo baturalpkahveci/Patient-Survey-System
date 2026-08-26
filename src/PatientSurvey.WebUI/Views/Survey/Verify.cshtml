@@ -1,0 +1,52 @@
+@model SurveyIdentityViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="survey-page">
+    <header class="survey-header">
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p>@Model.Description</p>
+        }
+    </header>
+
+    <form asp-action="Verify" asp-route-token="@Model.Token" method="post" class="survey-form">
+        @Html.AntiForgeryToken()
+        <input asp-for="Token" type="hidden" />
+        <input asp-for="InvitationId" type="hidden" />
+        <input asp-for="KvkkNoticeVersion" type="hidden" />
+        <input asp-for="KvkkNoticeText" type="hidden" />
+
+        @if (!string.IsNullOrWhiteSpace(Model.FormError))
+        {
+            <div class="validation-summary">@Model.FormError</div>
+        }
+
+        <div class="field-block">
+            <label asp-for="TcIdentityNumber">T.C. Kimlik Numarası</label>
+            <input asp-for="TcIdentityNumber" inputmode="numeric" autocomplete="off" />
+            <span asp-validation-for="TcIdentityNumber" class="field-validation"></span>
+        </div>
+
+        <section class="kvkk-notice">
+            <button type="button" class="link-button" data-kvkk-toggle>Aydınlatma Metni</button>
+            <p data-kvkk-text hidden>@Model.KvkkNoticeText</p>
+            <small>Versiyon @Model.KvkkNoticeVersion</small>
+        </section>
+
+        <label class="check-row">
+            <input asp-for="KvkkAccepted" />
+            <span>KVKK Aydınlatma Metni'ni okudum ve onay durumumu bildiriyorum.</span>
+        </label>
+        <span asp-validation-for="KvkkAccepted" class="field-validation"></span>
+
+        <button type="submit" class="primary-button">Ankete Devam Et</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

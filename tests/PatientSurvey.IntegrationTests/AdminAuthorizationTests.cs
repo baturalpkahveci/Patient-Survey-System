@@ -36,7 +36,8 @@ public sealed class AdminAuthorizationTests : IClassFixture<AdminAuthorizationTe
             {
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Port=5432;Database=patient_survey_test;Username=test;Password=test"
+                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Port=5432;Database=patient_survey_test;Username=test;Password=test",
+                    ["PATIENT_IDENTITY_KEY"] = "integration-test-identity-key"
                 });
             });
         }

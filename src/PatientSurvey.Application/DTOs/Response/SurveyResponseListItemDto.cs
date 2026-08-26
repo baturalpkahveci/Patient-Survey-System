@@ -7,4 +7,12 @@ public sealed record SurveyResponseListItemDto(
     string DepartmentName,
     DateTimeOffset SubmittedAtUtc,
     int AnswerCount,
-    double? AverageScore);
+    double? AverageScore,
+    bool IsGeneralSurvey = true,
+    int? SurveyDoctorId = null,
+    string PatientName = "Anonim",
+    string? PatientPhone = null,
+    string? PatientEmail = null,
+    int? InvitationId = null,
+    DateTimeOffset? ExaminedAtUtc = null,
+    IReadOnlyCollection<SurveyResponseAnswerDto>? Answers = null);

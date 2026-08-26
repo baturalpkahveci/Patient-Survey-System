@@ -1,0 +1,40 @@
+@model EditDoctorDepartmentViewModel
+
+@{
+    ViewData["Title"] = "Doktor Bölümü";
+}
+
+<section class="admin-page">
+    <h1>Doktor Bölümü</h1>
+
+    <form asp-action="EditDepartment" method="post" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <input asp-for="DoctorId" type="hidden" />
+        <input asp-for="DoctorName" type="hidden" />
+        <input asp-for="Username" type="hidden" />
+
+        <div class="detail-grid">
+            <div><span>Doktor</span><strong>@Model.DoctorName</strong></div>
+            <div><span>Kullanıcı</span><strong>@Model.Username</strong></div>
+        </div>
+
+        <div class="field-block">
+            <label asp-for="DepartmentId">Bölüm</label>
+            <select asp-for="DepartmentId">
+                <option value="">Bölüm seçin</option>
+                @foreach (var department in Model.Departments)
+                {
+                    <option value="@department.Id">@department.Name</option>
+                }
+            </select>
+            <span asp-validation-for="DepartmentId" class="field-validation"></span>
+        </div>
+
+        <button type="submit" class="primary-button">Bölümü Güncelle</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

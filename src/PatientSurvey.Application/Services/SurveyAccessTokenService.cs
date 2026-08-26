@@ -26,12 +26,20 @@ public sealed class SurveyAccessTokenService
             .Select(token => new SurveyAccessTokenListItemDto(
                 token.Id,
                 token.SurveyId,
+                token.SurveyInvitationId,
                 token.Survey?.Title ?? string.Empty,
                 token.Token,
                 token.CreatedAtUtc,
                 token.ExpiresAtUtc,
                 token.UsedAtUtc,
-                token.SurveyResponse is not null))
+                token.SurveyResponse is not null,
+                token.SurveyInvitation?.DeliveryStatus.ToString() ?? "Legacy",
+                token.Survey?.DoctorId,
+                token.Survey?.DepartmentId,
+                token.Survey?.DoctorId is null && token.Survey?.DepartmentId is null,
+                FormatPatientName(token.SurveyInvitation?.PatientVisit?.Patient),
+                NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.PhoneNumber),
+                NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.Email)))
             .ToArray();
     }
 
@@ -70,12 +78,34 @@ public sealed class SurveyAccessTokenService
         return ServiceResult<SurveyAccessTokenListItemDto>.Success(new SurveyAccessTokenListItemDto(
             token.Id,
             survey.Id,
+            token.SurveyInvitationId,
             survey.Title,
             token.Token,
             token.CreatedAtUtc,
             token.ExpiresAtUtc,
             token.UsedAtUtc,
-            HasResponse: false));
+            HasResponse: false,
+            DeliveryStatus: "Legacy",
+            SurveyDoctorId: survey.DoctorId,
+            SurveyDepartmentId: survey.DepartmentId,
+            IsGeneralSurvey: survey.DoctorId is null && survey.DepartmentId is null));
+    }
+
+    private static string FormatPatientName(Patient? patient)
+    {
+        if (patient is null)
+        {
+            return "Anonim";
+        }
+
+        var fullName = $"{patient.FirstName} {patient.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? "Hasta bilgisi yok" : fullName;
+    }
+
+    private static string? NormalizePatientInfo(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 
     public async Task<string> GenerateUniqueTokenAsync(CancellationToken cancellationToken = default)

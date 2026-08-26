@@ -6,6 +6,12 @@ public sealed record AdminSurveyListItemDto(
     string? Description,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
+    bool IsGeneral,
+    int? DepartmentId,
+    string? DepartmentName,
+    int? DoctorId,
+    string? DoctorName,
     int QuestionCount,
     int TokenCount,
-    int ResponseCount);
+    int ResponseCount,
+    double? AverageScore);

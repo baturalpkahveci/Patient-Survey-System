@@ -187,6 +187,25 @@ header {
   color: var(--danger);
 }
 
+.doctor-top-profile {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 160px;
+  border-left: 1px solid var(--line);
+  padding-left: 0.75rem;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.doctor-top-profile strong {
+  font-size: 0.92rem;
+}
+
+.doctor-top-profile small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .subnav {
   width: min(1180px, 92vw);
   min-height: 48px;

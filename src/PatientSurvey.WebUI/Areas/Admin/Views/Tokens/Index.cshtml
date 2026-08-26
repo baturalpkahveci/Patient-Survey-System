@@ -1,4 +1,4 @@
-﻿@model TokenIndexViewModel
+@model TokenIndexViewModel
 
 @{
     ViewData["Title"] = "Anket Linkleri";
@@ -6,23 +6,75 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Anket Linkleri</h1>
+        <div>
+            <h1>Anket Linkleri</h1>
+            <p>Hasta davetlerini, link durumlarını ve anket kapsamını hızlıca filtreleyin.</p>
+        </div>
         <a class="primary-button" asp-action="Create">Yeni Link</a>
     </div>
 
+    <form method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label for="search">Arama</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="Hasta, anket veya token" />
+        </div>
+        <div class="field-block">
+            <label for="surveyId">Anket</label>
+            <select id="surveyId" name="surveyId">
+                <option value="">Tüm anketler</option>
+                @foreach (var survey in Model.SurveyOptions)
+                {
+                    <option value="@survey.Value" selected="@(Model.SurveyId?.ToString() == survey.Value)">@survey.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="surveyScope">Kapsam</label>
+            <select id="surveyScope" name="surveyScope">
+                <option value="">Tümü</option>
+                <option value="general" selected="@(Model.SurveyScope == "general")">Genel anket</option>
+                <option value="targeted" selected="@(Model.SurveyScope == "targeted")">Hedefli anket</option>
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="status">Durum</label>
+            <select id="status" name="status">
+                <option value="">Tümü</option>
+                <option value="ready" selected="@(Model.Status == "ready")">Hazır</option>
+                <option value="answered" selected="@(Model.Status == "answered")">Cevaplandı</option>
+                <option value="expired" selected="@(Model.Status == "expired")">Süresi doldu</option>
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="deliveryStatus">Gönderim</label>
+            <select id="deliveryStatus" name="deliveryStatus">
+                <option value="">Tümü</option>
+                @foreach (var delivery in Model.DeliveryOptions)
+                {
+                    <option value="@delivery.Value" selected="@(Model.DeliveryStatus == delivery.Value)">@delivery.Text</option>
+                }
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+            <span class="filter-summary">@Model.Tokens.Count / @Model.TotalCount link</span>
+        </div>
+    </form>
+
     @if (Model.Tokens.Count == 0)
     {
-        <p>Henüz anket linki yok.</p>
+        <p>Filtreye uygun anket linki yok.</p>
     }
     else
     {
-        <table class="admin-table">
+        <table class="admin-table token-table">
             <thead>
                 <tr>
-                    <th>Anket</th>
+                    <th>Hasta / Anket</th>
                     <th>Link</th>
-                    <th>Oluşturma</th>
-                    <th>Son Kullanma</th>
+                    <th>Gönderim</th>
+                    <th>Tarihler</th>
                     <th>Durum</th>
                 </tr>
             </thead>
@@ -31,14 +83,65 @@
                 {
                     var url = $"{Model.SurveyUrlPrefix}{token.Token}";
                     <tr>
-                        <td>@token.SurveyTitle</td>
-                        <td><input class="copy-input" value="@url" readonly /></td>
-                        <td>@token.CreatedAtUtc.ToLocalTime().ToString("g")</td>
-                        <td>@(token.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
-                        <td>@(token.HasResponse || token.UsedAtUtc.HasValue ? "Kullanıldı" : "Hazır")</td>
+                        <td>
+                            <strong>@token.PatientName</strong>
+                            <span class="table-note">@token.SurveyTitle (@(token.IsGeneralSurvey ? "Genel" : "Hedefli"))</span>
+                            <span class="table-note">@FormatContact(token) @(token.InvitationId.HasValue ? $"| Davet #{token.InvitationId}" : string.Empty)</span>
+                        </td>
+                        <td>
+                            <div class="copy-row">
+                                <input class="copy-input" value="@url" readonly data-copy-source="@token.Id" />
+                                <button type="button" class="secondary-button" data-copy-button data-copy-target="@token.Id">Kopyala</button>
+                            </div>
+                        </td>
+                        <td>@FormatDeliveryStatus(token.DeliveryStatus)</td>
+                        <td>
+                            <strong>@token.CreatedAtUtc.ToLocalTime().ToString("g")</strong>
+                            <span class="table-note">Son: @(token.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "-")</span>
+                        </td>
+                        <td><span class="status-pill">@FormatTokenStatus(token)</span></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
 </section>
+
+@functions {
+    private static string FormatContact(PatientSurvey.Application.DTOs.Survey.SurveyAccessTokenListItemDto token)
+    {
+        var parts = new[] { token.PatientPhone, token.PatientEmail }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        return parts.Length == 0 ? "İletişim bilgisi yok" : string.Join(" | ", parts);
+    }
+
+    private static string FormatTokenStatus(PatientSurvey.Application.DTOs.Survey.SurveyAccessTokenListItemDto token)
+    {
+        if (token.HasResponse || token.UsedAtUtc.HasValue)
+        {
+            return "Cevaplandı";
+        }
+
+        if (token.ExpiresAtUtc.HasValue && token.ExpiresAtUtc.Value <= DateTimeOffset.UtcNow)
+        {
+            return "Süresi doldu";
+        }
+
+        return "Hazır";
+    }
+
+    private static string FormatDeliveryStatus(string value)
+    {
+        return value switch
+        {
+            "LinkCreated" => "Link oluşturuldu",
+            "Sent" => "Gönderildi",
+            "Failed" => "Başarısız",
+            "NotConfigured" => "Yapılandırılmadı",
+            "Legacy" => "Eski link",
+            _ => value
+        };
+    }
+}

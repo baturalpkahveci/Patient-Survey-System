@@ -1,0 +1,44 @@
+@model DoctorIndexViewModel
+
+@{
+    ViewData["Title"] = "Doktorlar";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <h1>Doktorlar</h1>
+    </div>
+
+    @if (Model.Doctors.Count == 0)
+    {
+        <p>Henüz doktor kaydı yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Doktor</th>
+                    <th>Kullanıcı</th>
+                    <th>Bölüm</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doctor in Model.Doctors)
+                {
+                    <tr>
+                        <td>Dr. @doctor.FirstName @doctor.LastName</td>
+                        <td>@doctor.Username</td>
+                        <td>@doctor.DepartmentName</td>
+                        <td>@(doctor.IsActive ? "Aktif" : "Pasif")</td>
+                        <td class="table-actions">
+                            <a asp-action="EditDepartment" asp-route-id="@doctor.Id">Bölüm değiştir</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

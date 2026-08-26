@@ -87,7 +87,7 @@ public abstract class RepositoryBase<T> : IRepositoryBase<T>
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: UniqueViolation })
         {
-            throw new BusinessRuleException("Bu anket daha once gonderilmis.");
+            throw new BusinessRuleException("Bu anket daha önce gönderilmiş.");
         }
     }
 }

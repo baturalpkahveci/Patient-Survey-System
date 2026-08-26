@@ -1,0 +1,113 @@
+@model DoctorTokenIndexViewModel
+
+@{
+    ViewData["Title"] = "Linkler";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>Linkler</h1>
+            <p>Hastalara gönderdiğiniz anket linklerini buradan tekrar kopyalayabilirsiniz.</p>
+        </div>
+        <a class="primary-button" asp-area="Doctor" asp-controller="Patients" asp-action="Create">Hasta Kaydı</a>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div class="field-block filter-search">
+            <label for="search">Arama</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="Hasta, anket veya link" />
+        </div>
+        <div class="field-block">
+            <label for="surveyId">Anket</label>
+            <select id="surveyId" name="surveyId">
+                <option value="">Tüm anketler</option>
+                @foreach (var survey in Model.SurveyOptions)
+                {
+                    <option value="@survey.Value" selected="@(Model.SurveyId?.ToString() == survey.Value)">@survey.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="deliveryStatus">Gönderim</label>
+            <select id="deliveryStatus" name="deliveryStatus">
+                <option value="">Tümü</option>
+                @foreach (var delivery in Model.DeliveryOptions)
+                {
+                    <option value="@delivery.Value" selected="@(Model.DeliveryStatus == delivery.Value)">@delivery.Text</option>
+                }
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-action="Index">Temizle</a>
+            <span class="filter-summary">@Model.Tokens.Count / @Model.TotalCount link</span>
+        </div>
+    </form>
+
+    @if (Model.Tokens.Count == 0)
+    {
+        <p>Filtreye uygun link yok.</p>
+    }
+    else
+    {
+        <table class="admin-table token-table">
+            <thead>
+                <tr>
+                    <th>Hasta / Anket</th>
+                    <th>Link</th>
+                    <th>Gönderim</th>
+                    <th>Tarihler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var token in Model.Tokens)
+                {
+                    var url = $"{Model.SurveyUrlPrefix}{token.Token}";
+                    <tr>
+                        <td>
+                            <strong>@token.PatientName</strong>
+                            <span class="table-note">@token.SurveyTitle</span>
+                            <span class="table-note">@FormatContact(token) @(token.InvitationId.HasValue ? $"| Davet #{token.InvitationId}" : string.Empty)</span>
+                        </td>
+                        <td>
+                            <div class="copy-row">
+                                <input class="copy-input" value="@url" readonly data-copy-source="@token.Id" />
+                                <button type="button" class="secondary-button" data-copy-button data-copy-target="@token.Id">Kopyala</button>
+                            </div>
+                        </td>
+                        <td>@FormatDeliveryStatus(token.DeliveryStatus)</td>
+                        <td>
+                            <strong>@token.CreatedAtUtc.ToLocalTime().ToString("g")</strong>
+                            <span class="table-note">Son: @(token.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "-")</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@functions {
+    private static string FormatContact(PatientSurvey.Application.DTOs.Survey.SurveyAccessTokenListItemDto token)
+    {
+        var parts = new[] { token.PatientPhone, token.PatientEmail }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        return parts.Length == 0 ? "İletişim bilgisi yok" : string.Join(" | ", parts);
+    }
+
+    private static string FormatDeliveryStatus(string value)
+    {
+        return value switch
+        {
+            "LinkCreated" => "Link oluşturuldu",
+            "Sent" => "Gönderildi",
+            "Failed" => "Başarısız",
+            "NotConfigured" => "Yapılandırılmadı",
+            "Legacy" => "Eski link",
+            _ => value
+        };
+    }
+}

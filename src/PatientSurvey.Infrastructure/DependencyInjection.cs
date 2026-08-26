@@ -11,8 +11,13 @@ using AppIAdminQuestionRepository = PatientSurvey.Application.Interfaces.IAdminQ
 using AppIAdminSurveyRepository = PatientSurvey.Application.Interfaces.IAdminSurveyRepository;
 using AppIAdminUserRepository = PatientSurvey.Application.Interfaces.IAdminUserRepository;
 using AppIManagementReportRepository = PatientSurvey.Application.Interfaces.IManagementReportRepository;
+using AppIDoctorManagementRepository = PatientSurvey.Application.Interfaces.IDoctorManagementRepository;
+using AppIEmailSender = PatientSurvey.Application.Interfaces.IEmailSender;
+using AppIPatientIdentityProtector = PatientSurvey.Application.Interfaces.IPatientIdentityProtector;
 using AppIPasswordHasher = PatientSurvey.Application.Interfaces.IPasswordHasher;
+using AppISmsSender = PatientSurvey.Application.Interfaces.ISmsSender;
 using AppISurveyAccessTokenRepository = PatientSurvey.Application.Interfaces.ISurveyAccessTokenRepository;
+using AppISurveyInvitationRepository = PatientSurvey.Application.Interfaces.ISurveyInvitationRepository;
 using AppISurveyReadRepository = PatientSurvey.Application.Interfaces.ISurveyReadRepository;
 using AppISurveySubmissionRepository = PatientSurvey.Application.Interfaces.ISurveySubmissionRepository;
 using AppIUserRepository = PatientSurvey.Application.Interfaces.IUserRepository;
@@ -46,16 +51,22 @@ public static class DependencyInjection
         services.AddScoped<AppIAdminQuestionRepository, AdminQuestionRepository>();
         services.AddScoped<AppIAdminDepartmentRepository, AdminDepartmentRepository>();
         services.AddScoped<AppIManagementReportRepository, ManagementReportRepository>();
+        services.AddScoped<AppIDoctorManagementRepository, DoctorManagementRepository>();
         services.AddScoped<AppISurveySubmissionRepository>(provider =>
             provider.GetRequiredService<SurveyWorkflowRepository>());
         services.AddScoped<AppISurveyReadRepository>(provider =>
             provider.GetRequiredService<SurveyWorkflowRepository>());
         services.AddScoped<AppISurveyAccessTokenRepository>(provider =>
             provider.GetRequiredService<SurveyWorkflowRepository>());
+        services.AddScoped<AppISurveyInvitationRepository>(provider =>
+            provider.GetRequiredService<SurveyWorkflowRepository>());
         services.AddScoped<AppIUserRepository>(provider =>
             (AppIUserRepository)provider.GetRequiredService<InfraIUserRepository>());
         services.AddSingleton<AppIClock, SystemClock>();
         services.AddSingleton<AppIPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<AppIPatientIdentityProtector, HmacPatientIdentityProtector>();
+        services.AddSingleton<AppISmsSender, DevelopmentSmsSender>();
+        services.AddSingleton<AppIEmailSender, DevelopmentEmailSender>();
 
         return services;
     }

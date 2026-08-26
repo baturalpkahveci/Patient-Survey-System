@@ -18,8 +18,11 @@ internal sealed class AdminSurveyRepository : IAdminSurveyRepository
     {
         return await _repositoryManager.Surveys.GetAllSurveys(trackChanges: false)
             .Include(survey => survey.Questions)
+            .Include(survey => survey.Department)
+            .Include(survey => survey.Doctor)
             .Include(survey => survey.AccessTokens)
                 .ThenInclude(token => token.SurveyResponse)
+                    .ThenInclude(response => response!.Answers)
             .ToArrayAsync(cancellationToken);
     }
 

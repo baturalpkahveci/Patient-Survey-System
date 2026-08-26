@@ -168,6 +168,7 @@ public sealed class SurveySubmissionServiceEdgeCaseTests
         public int BeginTransactionCount { get; private set; }
         public bool ThrowOnSave { get; set; }
         public bool ThrowBusinessRuleOnSave { get; set; }
+        public List<SurveyConsent> AddedConsents { get; } = new();
 
         public static FakeSubmissionRepository Valid(DateTimeOffset now)
         {
@@ -244,6 +245,11 @@ public sealed class SurveySubmissionServiceEdgeCaseTests
         public void AddSurveyResponse(SurveyResponse response)
         {
             AddedResponses.Add(response);
+        }
+
+        public void AddSurveyConsent(SurveyConsent consent)
+        {
+            AddedConsents.Add(consent);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken)

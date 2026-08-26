@@ -10,4 +10,7 @@ public sealed class User
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public Role? Role { get; set; }
+    public Doctor? Doctor { get; set; }
+    public ICollection<PatientVisit> CreatedPatientVisits { get; set; } = new List<PatientVisit>();
+    public ICollection<SurveyInvitation> CreatedSurveyInvitations { get; set; } = new List<SurveyInvitation>();
 }

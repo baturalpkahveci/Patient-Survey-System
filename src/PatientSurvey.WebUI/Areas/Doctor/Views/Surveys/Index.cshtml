@@ -1,0 +1,76 @@
+@model DoctorSurveyIndexViewModel
+
+@{
+    ViewData["Title"] = "Doktor Anketleri";
+}
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>Anketler</h1>
+            <p>@Model.DepartmentName bölümünde oluşturduğunuz anketleri yönetin.</p>
+        </div>
+        <a class="primary-button" asp-action="Create">Yeni Anket</a>
+    </div>
+
+    @if (Model.Surveys.Count == 0)
+    {
+        <p>Henüz anketiniz yok.</p>
+    }
+    else
+    {
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Soru</th>
+                    <th>Link</th>
+                    <th>Cevap</th>
+                    <th>Ortalama</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var survey in Model.Surveys)
+                {
+                    <tr>
+                        <td>
+                            <strong>@survey.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(survey.Description))
+                            {
+                                <span class="table-note">@survey.Description</span>
+                            }
+                        </td>
+                        <td>@survey.QuestionCount</td>
+                        <td>@survey.TokenCount</td>
+                        <td>@survey.ResponseCount</td>
+                        <td><span class="score-badge @ScoreClass(survey.AverageScore)">@(survey.AverageScore?.ToString("0.00") ?? "-")</span></td>
+                        <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
+                        <td class="table-actions">
+                            <a asp-area="Doctor" asp-controller="Questions" asp-action="Create" asp-route-surveyId="@survey.Id">Soru ekle</a>
+                            <a asp-area="Doctor" asp-controller="Patients" asp-action="Create" asp-route-surveyId="@survey.Id">Hastaya gönder</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@functions {
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
+        };
+    }
+}

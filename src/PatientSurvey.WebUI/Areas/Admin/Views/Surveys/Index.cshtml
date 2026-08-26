@@ -20,9 +20,11 @@
             <thead>
                 <tr>
                     <th>Başlık</th>
+                    <th>Kapsam</th>
                     <th>Soru</th>
                     <th>Link</th>
                     <th>Cevap</th>
+                    <th>Ortalama</th>
                     <th>Durum</th>
                     <th></th>
                 </tr>
@@ -38,9 +40,21 @@
                                 <span class="table-note">@survey.Description</span>
                             }
                         </td>
+                        <td>
+                            @(survey.IsGeneral ? "Genel" : "Hedefli")
+                            @if (!survey.IsGeneral)
+                            {
+                                <span class="table-note">@survey.DepartmentName / @survey.DoctorName</span>
+                            }
+                        </td>
                         <td>@survey.QuestionCount</td>
                         <td>@survey.TokenCount</td>
                         <td>@survey.ResponseCount</td>
+                        <td>
+                            <span class="score-badge @ScoreClass(survey.AverageScore)">
+                                @(survey.AverageScore?.ToString("0.00") ?? "-")
+                            </span>
+                        </td>
                         <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
                         <td class="table-actions">
                             <a asp-controller="Questions" asp-action="Create" asp-route-surveyId="@survey.Id">Soru ekle</a>
@@ -56,3 +70,20 @@
         </table>
     }
 </section>
+
+@functions {
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
+        };
+    }
+}

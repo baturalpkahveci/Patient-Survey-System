@@ -18,6 +18,11 @@ public sealed class AppDbContext : DbContext
     public DbSet<SurveyAccessToken> SurveyAccessTokens => Set<SurveyAccessToken>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PatientVisit> PatientVisits => Set<PatientVisit>();
+    public DbSet<SurveyInvitation> SurveyInvitations => Set<SurveyInvitation>();
+    public DbSet<SurveyConsent> SurveyConsents => Set<SurveyConsent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,25 +1,38 @@
-﻿@model ReportIndexViewModel
+@using PatientSurvey.Application.DTOs.Report
+@model ReportIndexViewModel
 
 @{
-    ViewData["Title"] = "Raporlar";
+    ViewData["Title"] = "Yönetici Raporları";
+    var dashboard = Model.Dashboard!;
 }
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Raporlar</h1>
+        <div>
+            <h1>Yönetici Raporları</h1>
+            <p>Doktor ve anket performansını kompakt şekilde karşılaştırın.</p>
+        </div>
     </div>
 
     <form method="get" class="filter-bar">
         <div class="field-block filter-search">
-            <label for="search">Anket</label>
-            <input id="search" name="search" value="@Model.Search" placeholder="Anket adı ara" />
+            <label for="search">Arama</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="Doktor, bölüm veya anket adı" />
         </div>
         <div class="field-block">
-            <label for="status">Durum</label>
+            <label for="status">Anket Durumu</label>
             <select id="status" name="status">
                 <option value="">Tüm durumlar</option>
                 <option value="active" selected="@(Model.Status == "active")">Aktif</option>
                 <option value="passive" selected="@(Model.Status == "passive")">Pasif</option>
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="surveyScope">Kapsam</label>
+            <select id="surveyScope" name="surveyScope">
+                <option value="">Tümü</option>
+                <option value="general" selected="@(Model.SurveyScope == "general")">Genel anket</option>
+                <option value="targeted" selected="@(Model.SurveyScope == "targeted")">Hedefli anket</option>
             </select>
         </div>
         <div class="field-block">
@@ -32,53 +45,168 @@
         </div>
     </form>
 
-    <p class="filter-summary">@Model.Reports.Count / @Model.TotalCount rapor gösteriliyor.</p>
+    <div class="stat-grid">
+        <div class="stat-tile"><span>Anket</span><strong>@dashboard.SurveyCount</strong></div>
+        <div class="stat-tile"><span>Doktor</span><strong>@dashboard.DoctorCount</strong></div>
+        <div class="stat-tile"><span>Gönderim</span><strong>@dashboard.ResponseCount</strong></div>
+        <div class="stat-tile"><span>Genel Ortalama</span><strong>@FormatAverage(dashboard.OverallAverageScore)</strong></div>
+    </div>
 
-    @if (Model.Reports.Count == 0)
-    {
-        <p>Filtreye uygun rapor bulunamadı.</p>
-    }
-    else
-    {
-        <div class="report-list">
-            @foreach (var report in Model.Reports)
-            {
-                <article class="report-panel">
-                    <div class="admin-heading">
-                        <h2>@report.SurveyTitle</h2>
-                        <span class="status-pill">@(report.IsActive ? "Aktif" : "Pasif")</span>
-                    </div>
-                    <div class="detail-grid">
-                        <div><span>Soru</span><strong>@report.QuestionCount</strong></div>
-                        <div><span>Link</span><strong>@report.TokenCount</strong></div>
-                        <div><span>Cevap</span><strong>@report.ResponseCount</strong></div>
-                        <div><span>Puan Ortalaması</span><strong>@(report.AverageScore?.ToString("0.00") ?? "-")</strong></div>
-                    </div>
+    <div class="performance-grid">
+        <section class="performance-panel">
+            <h2>En Yüksek Doktor Puanları</h2>
+            @RenderHighlights(dashboard.TopDoctors)
+        </section>
+        <section class="performance-panel">
+            <h2>En Düşük Doktor Puanları</h2>
+            @RenderHighlights(dashboard.LowDoctors)
+        </section>
+        <section class="performance-panel">
+            <h2>En Yüksek Anketler</h2>
+            @RenderHighlights(dashboard.TopSurveys)
+        </section>
+        <section class="performance-panel">
+            <h2>En Düşük Anketler</h2>
+            @RenderHighlights(dashboard.LowSurveys)
+        </section>
+    </div>
 
-                    @if (report.Departments.Count > 0)
-                    {
-                        <table class="admin-table compact-table">
-                            <thead>
-                                <tr>
-                                    <th>Bölüm</th>
-                                    <th>Cevap</th>
-                                    <th>Puan Ortalaması</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var department in report.Departments)
-                                {
-                                    <tr>
-                                        <td>@department.DepartmentName</td>
-                                        <td>@department.ResponseCount</td>
-                                        <td>@(department.AverageScore?.ToString("0.00") ?? "-")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                </article>
-            }
+    <section class="report-panel">
+        <div class="admin-heading">
+            <h2>Doktor Performansı</h2>
+            <span class="filter-summary">@dashboard.Doctors.Count kayıt</span>
         </div>
-    }
+        @if (dashboard.Doctors.Count == 0)
+        {
+            <p>Bu filtrelerle eşleşen doktor performansı yok.</p>
+        }
+        else
+        {
+            <table class="admin-table compact-table">
+                <thead>
+                    <tr>
+                        <th>Doktor</th>
+                        <th>Bölüm</th>
+                        <th>Anket</th>
+                        <th>Gönderim</th>
+                        <th>Ortalama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doctor in dashboard.Doctors)
+                    {
+                        <tr>
+                            <td><strong>@doctor.DoctorName</strong></td>
+                            <td>@doctor.DepartmentName</td>
+                            <td>@doctor.SurveyCount</td>
+                            <td>@doctor.ResponseCount</td>
+                            <td><span class="score-badge @ScoreClass(doctor.AverageScore)">@FormatAverage(doctor.AverageScore)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section class="report-panel">
+        <div class="admin-heading">
+            <h2>Anket Performansı</h2>
+            <span class="filter-summary">@dashboard.Surveys.Count kayıt</span>
+        </div>
+        @if (dashboard.Surveys.Count == 0)
+        {
+            <p>Bu filtrelerle eşleşen anket performansı yok.</p>
+        }
+        else
+        {
+            <table class="admin-table compact-table">
+                <thead>
+                    <tr>
+                        <th>Anket</th>
+                        <th>Kapsam</th>
+                        <th>Soru</th>
+                        <th>Link</th>
+                        <th>Gönderim</th>
+                        <th>Ortalama</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var survey in dashboard.Surveys)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@survey.SurveyTitle</strong>
+                                @if (!string.IsNullOrWhiteSpace(survey.DoctorName) || !string.IsNullOrWhiteSpace(survey.DepartmentName))
+                                {
+                                    <span class="table-note">@survey.DepartmentName / @survey.DoctorName</span>
+                                }
+                            </td>
+                            <td>@survey.ScopeLabel</td>
+                            <td>@survey.QuestionCount</td>
+                            <td>@survey.TokenCount</td>
+                            <td>@survey.ResponseCount</td>
+                            <td><span class="score-badge @ScoreClass(survey.AverageScore)">@FormatAverage(survey.AverageScore)</span></td>
+                            <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
 </section>
+
+@functions {
+    private static string FormatAverage(double? average)
+    {
+        return average.HasValue ? average.Value.ToString("0.00") : "-";
+    }
+
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
+        };
+    }
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent RenderHighlights(IReadOnlyCollection<PerformanceHighlightDto> highlights)
+    {
+        var builder = new System.Text.StringBuilder();
+        if (highlights.Count == 0)
+        {
+            builder.Append("<p>Henüz yeterli puanlı veri yok.</p>");
+            return new Microsoft.AspNetCore.Html.HtmlString(builder.ToString());
+        }
+
+        builder.Append("<ol class=\"performance-list\">");
+        foreach (var item in highlights)
+        {
+            var scoreClass = ScoreClass(item.AverageScore);
+            builder.Append("<li>");
+            builder.Append("<div><strong>");
+            builder.Append(System.Net.WebUtility.HtmlEncode(item.Name));
+            builder.Append("</strong><span>");
+            builder.Append(System.Net.WebUtility.HtmlEncode(item.Context));
+            builder.Append(" | ");
+            builder.Append(item.ResponseCount);
+            builder.Append(" gönderim</span></div>");
+            builder.Append("<span class=\"score-badge ");
+            builder.Append(scoreClass);
+            builder.Append("\">");
+            builder.Append(FormatAverage(item.AverageScore));
+            builder.Append("</span>");
+            builder.Append("</li>");
+        }
+
+        builder.Append("</ol>");
+        return new Microsoft.AspNetCore.Html.HtmlString(builder.ToString());
+    }
+}

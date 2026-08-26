@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Yeni Kullanıcı";
+    var doctorRoleId = Model.Roles.FirstOrDefault(role => string.Equals(role.Name, "Doctor", StringComparison.OrdinalIgnoreCase))?.Id;
+    var isDoctorSelected = doctorRoleId.HasValue && Model.RoleId == doctorRoleId.Value;
 }
 
 <section class="admin-page">
@@ -25,7 +27,7 @@
 
         <div class="field-block">
             <label asp-for="RoleId">Rol</label>
-            <select asp-for="RoleId">
+            <select asp-for="RoleId" data-user-role-select data-doctor-role-id="@doctorRoleId">
                 <option value="">Rol seçin</option>
                 @foreach (var role in Model.Roles)
                 {
@@ -33,6 +35,35 @@
                 }
             </select>
             <span asp-validation-for="RoleId" class="field-validation"></span>
+        </div>
+
+        <div class="form-section doctor-profile-section @(isDoctorSelected ? null : "is-hidden")" data-doctor-profile-fields>
+            <h2>Doktor Bilgileri</h2>
+            <div class="field-grid">
+                <div class="field-block">
+                    <label asp-for="DoctorFirstName">Doktor adı</label>
+                    <input asp-for="DoctorFirstName" disabled="@(!isDoctorSelected)" />
+                    <span asp-validation-for="DoctorFirstName" class="field-validation"></span>
+                </div>
+
+                <div class="field-block">
+                    <label asp-for="DoctorLastName">Doktor soyadı</label>
+                    <input asp-for="DoctorLastName" disabled="@(!isDoctorSelected)" />
+                    <span asp-validation-for="DoctorLastName" class="field-validation"></span>
+                </div>
+            </div>
+
+            <div class="field-block">
+                <label asp-for="DoctorDepartmentId">Bölüm</label>
+                <select asp-for="DoctorDepartmentId" disabled="@(!isDoctorSelected)">
+                    <option value="">Bölüm seçin</option>
+                    @foreach (var department in Model.Departments)
+                    {
+                        <option value="@department.Id">@department.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="DoctorDepartmentId" class="field-validation"></span>
+            </div>
         </div>
 
         <label class="check-row">

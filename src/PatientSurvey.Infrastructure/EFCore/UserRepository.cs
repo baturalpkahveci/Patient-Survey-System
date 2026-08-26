@@ -26,6 +26,8 @@ public sealed class UserRepository :
     {
         return FindAll(trackChanges)
             .Include(user => user.Role)
+            .Include(user => user.Doctor!)
+                .ThenInclude(doctor => doctor.Department)
             .OrderBy(user => user.Username);
     }
 
@@ -33,6 +35,8 @@ public sealed class UserRepository :
     {
         return FindByCondition(user => user.Id == userId, trackChanges)
             .Include(user => user.Role)
+            .Include(user => user.Doctor!)
+                .ThenInclude(doctor => doctor.Department)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

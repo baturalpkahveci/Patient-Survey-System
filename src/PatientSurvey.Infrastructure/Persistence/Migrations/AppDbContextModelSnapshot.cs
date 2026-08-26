@@ -92,6 +92,153 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                     b.ToTable("departments", (string)null);
                 });
 
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Doctor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("department_id");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("doctors", (string)null);
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Patient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<string>("TcIdentityLookupHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tc_identity_lookup_hash");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TcIdentityLookupHash")
+                        .IsUnique();
+
+                    b.ToTable("patients", (string)null);
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.PatientVisit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("department_id");
+
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("doctor_id");
+
+                    b.Property<DateTimeOffset>("ExaminedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("examined_at_utc");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("integer")
+                        .HasColumnName("patient_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("patient_visits", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_patient_visits_doctor_department_pair", "(doctor_id IS NULL AND department_id IS NULL) OR (doctor_id IS NOT NULL AND department_id IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("PatientSurvey.Domain.Entities.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -172,6 +319,12 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                             Id = 2,
                             IsActive = true,
                             Name = "Manager"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            IsActive = true,
+                            Name = "Doctor"
                         });
                 });
 
@@ -188,10 +341,18 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("description");
+
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("doctor_id");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -205,7 +366,14 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("surveys", (string)null);
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("surveys", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_surveys_doctor_department_pair", "(doctor_id IS NULL AND department_id IS NULL) OR (doctor_id IS NOT NULL AND department_id IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyAccessToken", b =>
@@ -229,6 +397,10 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("survey_id");
 
+                    b.Property<int?>("SurveyInvitationId")
+                        .HasColumnType("integer")
+                        .HasColumnName("survey_invitation_id");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -243,10 +415,92 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SurveyId");
 
+                    b.HasIndex("SurveyInvitationId")
+                        .IsUnique();
+
                     b.HasIndex("Token")
                         .IsUnique();
 
                     b.ToTable("survey_access_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyConsent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
+                    b.Property<string>("NoticeVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("notice_version");
+
+                    b.Property<int>("SurveyInvitationId")
+                        .HasColumnType("integer")
+                        .HasColumnName("survey_invitation_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyInvitationId")
+                        .IsUnique();
+
+                    b.ToTable("survey_consents", (string)null);
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyInvitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("DeliveryMethod")
+                        .HasColumnType("integer")
+                        .HasColumnName("delivery_method");
+
+                    b.Property<int>("DeliveryStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<int>("PatientVisitId")
+                        .HasColumnType("integer")
+                        .HasColumnName("patient_visit_id");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at_utc");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("survey_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PatientVisitId");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("survey_invitations", (string)null);
                 });
 
             modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyResponse", b =>
@@ -258,7 +512,7 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("DepartmentId")
+                    b.Property<int?>("DepartmentId")
                         .HasColumnType("integer")
                         .HasColumnName("department_id");
 
@@ -342,6 +596,58 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                     b.Navigation("SurveyResponse");
                 });
 
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Doctor", b =>
+                {
+                    b.HasOne("PatientSurvey.Domain.Entities.Department", "Department")
+                        .WithMany("Doctors")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PatientSurvey.Domain.Entities.User", "User")
+                        .WithOne("Doctor")
+                        .HasForeignKey("PatientSurvey.Domain.Entities.Doctor", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.PatientVisit", b =>
+                {
+                    b.HasOne("PatientSurvey.Domain.Entities.User", "CreatedByUser")
+                        .WithMany("CreatedPatientVisits")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PatientSurvey.Domain.Entities.Department", "Department")
+                        .WithMany("PatientVisits")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PatientSurvey.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("PatientVisits")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PatientSurvey.Domain.Entities.Patient", "Patient")
+                        .WithMany("Visits")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("PatientSurvey.Domain.Entities.Question", b =>
                 {
                     b.HasOne("PatientSurvey.Domain.Entities.Survey", "Survey")
@@ -353,6 +659,23 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                     b.Navigation("Survey");
                 });
 
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Survey", b =>
+                {
+                    b.HasOne("PatientSurvey.Domain.Entities.Department", "Department")
+                        .WithMany("Surveys")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PatientSurvey.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("Surveys")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Doctor");
+                });
+
             modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyAccessToken", b =>
                 {
                     b.HasOne("PatientSurvey.Domain.Entities.Survey", "Survey")
@@ -360,6 +683,51 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                         .HasForeignKey("SurveyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PatientSurvey.Domain.Entities.SurveyInvitation", "SurveyInvitation")
+                        .WithOne("AccessToken")
+                        .HasForeignKey("PatientSurvey.Domain.Entities.SurveyAccessToken", "SurveyInvitationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Survey");
+
+                    b.Navigation("SurveyInvitation");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyConsent", b =>
+                {
+                    b.HasOne("PatientSurvey.Domain.Entities.SurveyInvitation", "SurveyInvitation")
+                        .WithOne("Consent")
+                        .HasForeignKey("PatientSurvey.Domain.Entities.SurveyConsent", "SurveyInvitationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SurveyInvitation");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyInvitation", b =>
+                {
+                    b.HasOne("PatientSurvey.Domain.Entities.User", "CreatedByUser")
+                        .WithMany("CreatedSurveyInvitations")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PatientSurvey.Domain.Entities.PatientVisit", "PatientVisit")
+                        .WithMany("Invitations")
+                        .HasForeignKey("PatientVisitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PatientSurvey.Domain.Entities.Survey", "Survey")
+                        .WithMany("Invitations")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("PatientVisit");
 
                     b.Navigation("Survey");
                 });
@@ -369,8 +737,7 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                     b.HasOne("PatientSurvey.Domain.Entities.Department", "Department")
                         .WithMany("SurveyResponses")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PatientSurvey.Domain.Entities.SurveyAccessToken", "Token")
                         .WithOne("SurveyResponse")
@@ -396,7 +763,30 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PatientSurvey.Domain.Entities.Department", b =>
                 {
+                    b.Navigation("Doctors");
+
+                    b.Navigation("PatientVisits");
+
                     b.Navigation("SurveyResponses");
+
+                    b.Navigation("Surveys");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Doctor", b =>
+                {
+                    b.Navigation("PatientVisits");
+
+                    b.Navigation("Surveys");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.Patient", b =>
+                {
+                    b.Navigation("Visits");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.PatientVisit", b =>
+                {
+                    b.Navigation("Invitations");
                 });
 
             modelBuilder.Entity("PatientSurvey.Domain.Entities.Question", b =>
@@ -413,6 +803,8 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("AccessTokens");
 
+                    b.Navigation("Invitations");
+
                     b.Navigation("Questions");
                 });
 
@@ -421,9 +813,25 @@ namespace PatientSurvey.Infrastructure.Persistence.Migrations
                     b.Navigation("SurveyResponse");
                 });
 
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyInvitation", b =>
+                {
+                    b.Navigation("AccessToken");
+
+                    b.Navigation("Consent");
+                });
+
             modelBuilder.Entity("PatientSurvey.Domain.Entities.SurveyResponse", b =>
                 {
                     b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("PatientSurvey.Domain.Entities.User", b =>
+                {
+                    b.Navigation("CreatedPatientVisits");
+
+                    b.Navigation("CreatedSurveyInvitations");
+
+                    b.Navigation("Doctor");
                 });
 #pragma warning restore 612, 618
         }

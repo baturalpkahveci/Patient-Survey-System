@@ -8,4 +8,5 @@ public interface IManagementReportRepository
     Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(CancellationToken cancellationToken);
     Task<SurveyResponse?> GetResponseDetailAsync(int responseId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Survey>> GetSurveysForReportsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<Doctor>> GetDoctorsForReportsAsync(CancellationToken cancellationToken);
 }

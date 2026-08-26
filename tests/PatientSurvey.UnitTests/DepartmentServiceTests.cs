@@ -22,7 +22,7 @@ public sealed class DepartmentServiceTests
     }
 
     [Fact]
-    public async Task GetAdminDepartmentsAsync_counts_responses()
+    public async Task GetAdminDepartmentsAsync_counts_related_responses_surveys_and_doctors()
     {
         var adminRepository = new FakeAdminDepartmentRepository();
         adminRepository.Departments.Add(new Department
@@ -30,13 +30,18 @@ public sealed class DepartmentServiceTests
             Id = 1,
             Name = "Acil",
             IsActive = true,
-            SurveyResponses = { new SurveyResponse(), new SurveyResponse() }
+            SurveyResponses = { new SurveyResponse(), new SurveyResponse() },
+            Surveys = { new Survey(), new Survey(), new Survey() },
+            Doctors = { new Doctor(), new Doctor() }
         });
         var service = new DepartmentService(new FakeSurveyReadRepository(), adminRepository);
 
         var result = await service.GetAdminDepartmentsAsync();
 
-        Assert.Equal(2, Assert.Single(result).ResponseCount);
+        var department = Assert.Single(result);
+        Assert.Equal(2, department.ResponseCount);
+        Assert.Equal(3, department.SurveyCount);
+        Assert.Equal(2, department.DoctorCount);
     }
 
     [Fact]
@@ -105,6 +110,11 @@ public sealed class DepartmentServiceTests
         public Task<bool> DepartmentNameExistsAsync(string name, CancellationToken cancellationToken)
         {
             return Task.FromResult(ExistingNames.Contains(name));
+        }
+
+        public Task<bool> DepartmentNameExistsForAnotherAsync(int departmentId, string name, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Departments.Any(department => department.Id != departmentId && department.Name == name));
         }
 
         public void AddDepartment(Department department) => AddedDepartments.Add(department);

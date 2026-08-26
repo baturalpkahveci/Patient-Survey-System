@@ -120,6 +120,27 @@ public sealed class ReportServiceTests
             });
     }
 
+    [Fact]
+    public async Task GetManagerReportDashboardAsync_includes_doctors_without_responses()
+    {
+        var repository = new FakeManagementReportRepository();
+        repository.Doctors.Add(new Doctor
+        {
+            Id = 8,
+            FirstName = "Ayşe",
+            LastName = "Yılmaz",
+            Department = new Department { Name = "Dahiliye" }
+        });
+
+        var dashboard = await new ReportService(repository).GetManagerReportDashboardAsync();
+
+        var doctor = Assert.Single(dashboard.Doctors);
+        Assert.Equal("Dr. Ayşe Yılmaz", doctor.DoctorName);
+        Assert.Equal("Dahiliye", doctor.DepartmentName);
+        Assert.Equal(0, doctor.ResponseCount);
+        Assert.Null(doctor.AverageScore);
+    }
+
     private static SurveyResponse Response(
         int id,
         string surveyTitle,
@@ -156,6 +177,7 @@ public sealed class ReportServiceTests
     {
         public List<Survey> Surveys { get; } = new();
         public List<SurveyResponse> Responses { get; } = new();
+        public List<Doctor> Doctors { get; } = new();
         public SurveyResponse? ResponseDetail { get; set; }
 
         public Task<IReadOnlyCollection<Survey>> GetSurveysForDashboardAsync(CancellationToken cancellationToken)
@@ -176,6 +198,11 @@ public sealed class ReportServiceTests
         public Task<IReadOnlyCollection<Survey>> GetSurveysForReportsAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyCollection<Survey>>(Surveys);
+        }
+
+        public Task<IReadOnlyCollection<Doctor>> GetDoctorsForReportsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Doctor>>(Doctors);
         }
     }
 }

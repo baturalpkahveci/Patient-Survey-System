@@ -17,11 +17,12 @@ public sealed class DepartmentsController : Controller
         _departmentService = departmentService;
     }
 
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(int? editDepartmentId, CancellationToken cancellationToken)
     {
         return View(new DepartmentIndexViewModel
         {
-            Departments = await _departmentService.GetAdminDepartmentsAsync(cancellationToken)
+            Departments = await _departmentService.GetAdminDepartmentsAsync(cancellationToken),
+            EditingDepartmentId = editDepartmentId
         });
     }
 
@@ -49,6 +50,30 @@ public sealed class DepartmentsController : Controller
             return View(viewModel);
         }
 
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Update(UpdateDepartmentViewModel viewModel, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["AdminMessage"] = "Bölüm adı zorunludur.";
+            return RedirectToAction(nameof(Index), new { editDepartmentId = viewModel.Id });
+        }
+
+        var result = await _departmentService.UpdateDepartmentAsync(
+            new UpdateDepartmentRequestDto(viewModel.Id, viewModel.Name),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            TempData["AdminMessage"] = result.Message;
+            return RedirectToAction(nameof(Index), new { editDepartmentId = viewModel.Id });
+        }
+
+        TempData["AdminMessage"] = "Bölüm güncellendi.";
         return RedirectToAction(nameof(Index));
     }
 

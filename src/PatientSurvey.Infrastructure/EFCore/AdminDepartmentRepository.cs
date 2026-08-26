@@ -19,6 +19,8 @@ internal sealed class AdminDepartmentRepository : IAdminDepartmentRepository
         return await _repositoryManager.Departments
             .FindAll(trackChanges: false)
             .Include(department => department.SurveyResponses)
+            .Include(department => department.Surveys)
+            .Include(department => department.Doctors)
             .ToArrayAsync(cancellationToken);
     }
 
@@ -34,6 +36,16 @@ internal sealed class AdminDepartmentRepository : IAdminDepartmentRepository
     {
         return _repositoryManager.Departments
             .FindByCondition(department => department.Name == name, trackChanges: false)
+            .AnyAsync(cancellationToken);
+    }
+
+    public Task<bool> DepartmentNameExistsForAnotherAsync(
+        int departmentId,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        return _repositoryManager.Departments
+            .FindByCondition(department => department.Id != departmentId && department.Name == name, trackChanges: false)
             .AnyAsync(cancellationToken);
     }
 

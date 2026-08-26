@@ -1,4 +1,5 @@
-﻿@model ResultIndexViewModel
+@using PatientSurvey.Application.DTOs.Response
+@model ResultIndexViewModel
 
 @{
     ViewData["Title"] = "Sonuçlar";
@@ -6,7 +7,10 @@
 
 <section class="admin-page">
     <div class="admin-heading">
-        <h1>Anket Sonuçları</h1>
+        <div>
+            <h1>Anket Sonuçları</h1>
+            <p>Her satır bir hasta gönderimini temsil eder. Cevapları sırayla görmek için satırı açın.</p>
+        </div>
     </div>
 
     <form method="get" class="filter-bar">
@@ -31,11 +35,23 @@
             </select>
         </div>
         <div class="field-block">
-            <label for="fromDate">Baslangic</label>
+            <label for="surveyScope">Kapsam</label>
+            <select id="surveyScope" name="surveyScope">
+                <option value="">Tümü</option>
+                <option value="general" selected="@(Model.SurveyScope == "general")">Genel anket</option>
+                <option value="targeted" selected="@(Model.SurveyScope == "targeted")">Hedefli anket</option>
+            </select>
+        </div>
+        <div class="field-block filter-search">
+            <label for="patientName">Hasta</label>
+            <input id="patientName" name="patientName" value="@Model.PatientName" placeholder="Hasta adı ara" />
+        </div>
+        <div class="field-block">
+            <label for="fromDate">Başlangıç</label>
             <input id="fromDate" name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
         </div>
         <div class="field-block">
-            <label for="toDate">Bitis</label>
+            <label for="toDate">Bitiş</label>
             <input id="toDate" name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
         </div>
         <div class="field-block">
@@ -48,7 +64,7 @@
         </div>
     </form>
 
-    <p class="filter-summary">@Model.Results.Count / @Model.TotalCount sonuç gösteriliyor.</p>
+    <p class="filter-summary">@Model.Results.Count / @Model.TotalCount gönderim gösteriliyor.</p>
 
     @if (Model.Results.Count == 0)
     {
@@ -56,30 +72,130 @@
     }
     else
     {
-        <table class="admin-table">
+        <table class="admin-table result-submission-table">
             <thead>
                 <tr>
+                    <th>Hasta</th>
                     <th>Anket</th>
-                    <th>Bölüm</th>
-                    <th>Tarih</th>
-                    <th>Cevap</th>
+                    <th>Gönderim</th>
                     <th>Ortalama</th>
-                    <th></th>
+                    <th>Sonuç</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var result in Model.Results)
                 {
-                    <tr>
-                        <td>@result.SurveyTitle</td>
-                        <td>@result.DepartmentName</td>
-                        <td>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</td>
-                        <td>@result.AnswerCount</td>
-                        <td>@(result.AverageScore?.ToString("0.00") ?? "-")</td>
-                        <td><a asp-action="Details" asp-route-id="@result.Id">Detay</a></td>
+                    var detailId = $"result-detail-{result.Id}";
+                    <tr class="result-summary-row" data-result-toggle="@detailId" tabindex="0">
+                        <td>
+                            <strong>@result.PatientName</strong>
+                            <span class="table-note">@FormatContact(result)</span>
+                        </td>
+                        <td>
+                            <strong>@result.SurveyTitle</strong>
+                            <span class="table-note">@result.DepartmentName</span>
+                        </td>
+                        <td>
+                            <strong>@result.SubmittedAtUtc.ToLocalTime().ToString("g")</strong>
+                            <span class="table-note">@FormatInvitation(result)</span>
+                        </td>
+                        <td>
+                            <span class="score-badge @ScoreClass(result.AverageScore)">@FormatAverage(result.AverageScore)</span>
+                        </td>
+                        <td>
+                            <button type="button" class="secondary-button" data-result-toggle-button="@detailId">Cevapları Gör</button>
+                            <span class="table-note">@result.AnswerCount cevap</span>
+                        </td>
+                    </tr>
+                    <tr id="@detailId" class="result-detail-row" hidden>
+                        <td colspan="5">
+                            <div class="answer-stack">
+                                @foreach (var answer in Answers(result))
+                                {
+                                    <div class="answer-item">
+                                        <div>
+                                            <strong>@answer.DisplayOrder. @answer.QuestionText</strong>
+                                            <span>@FormatQuestionType(answer.QuestionType)</span>
+                                        </div>
+                                        <p>@FormatAnswer(answer)</p>
+                                    </div>
+                                }
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     }
 </section>
+
+@functions {
+    private static IReadOnlyCollection<SurveyResponseAnswerDto> Answers(SurveyResponseListItemDto result)
+    {
+        return result.Answers ?? Array.Empty<SurveyResponseAnswerDto>();
+    }
+
+    private static string FormatAverage(double? average)
+    {
+        return average.HasValue ? average.Value.ToString("0.00") : "-";
+    }
+
+    private static string ScoreClass(double? average)
+    {
+        if (!average.HasValue)
+        {
+            return "score-neutral";
+        }
+
+        return average.Value switch
+        {
+            >= 4 => "score-good",
+            >= 2.5 => "score-mid",
+            _ => "score-low"
+        };
+    }
+
+    private static string FormatContact(SurveyResponseListItemDto result)
+    {
+        var parts = new[] { result.PatientPhone, result.PatientEmail }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        return parts.Length == 0 ? "İletişim bilgisi yok" : string.Join(" | ", parts);
+    }
+
+    private static string FormatInvitation(SurveyResponseListItemDto result)
+    {
+        if (result.InvitationId.HasValue)
+        {
+            var visit = result.ExaminedAtUtc.HasValue
+                ? $"Muayene: {result.ExaminedAtUtc.Value.ToLocalTime():g}"
+                : "Muayene tarihi yok";
+            return $"Davet #{result.InvitationId.Value} | {visit}";
+        }
+
+        return "Genel anket gönderimi";
+    }
+
+    private static string FormatQuestionType(QuestionType type)
+    {
+        return type switch
+        {
+            QuestionType.Score => "Puan",
+            QuestionType.Text => "Metin",
+            QuestionType.Boolean => "Evet/Hayır",
+            _ => "-"
+        };
+    }
+
+    private static string FormatAnswer(SurveyResponseAnswerDto answer)
+    {
+        return answer.QuestionType switch
+        {
+            QuestionType.Score => answer.ScoreValue?.ToString() ?? "-",
+            QuestionType.Text => string.IsNullOrWhiteSpace(answer.TextValue) ? "-" : answer.TextValue,
+            QuestionType.Boolean => answer.BooleanValue.HasValue ? (answer.BooleanValue.Value ? "Evet" : "Hayır") : "-",
+            _ => "-"
+        };
+    }
+}

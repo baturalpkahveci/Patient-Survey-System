@@ -5,8 +5,10 @@ namespace PatientSurvey.WebUI.ViewModels.Admin;
 public sealed class ReportIndexViewModel
 {
     public IReadOnlyCollection<SurveyReportDto> Reports { get; set; } = Array.Empty<SurveyReportDto>();
+    public ManagerReportDashboardDto? Dashboard { get; set; }
     public string? Search { get; set; }
     public string? Status { get; set; }
+    public string? SurveyScope { get; set; }
     public int? MinResponses { get; set; }
     public int TotalCount { get; set; }
 }
