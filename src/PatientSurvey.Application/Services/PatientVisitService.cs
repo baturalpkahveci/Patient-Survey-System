@@ -8,39 +8,54 @@ namespace PatientSurvey.Application.Services;
 public sealed class PatientVisitService
 {
     private readonly IPatientVisitReadRepository _repository;
+    private readonly PermissionService? _permissionService;
 
-    public PatientVisitService(IPatientVisitReadRepository repository)
+    public PatientVisitService(IPatientVisitReadRepository repository, PermissionService? permissionService = null)
     {
         _repository = repository;
+        _permissionService = permissionService;
     }
 
     public async Task<IReadOnlyCollection<PatientVisitListItemDto>> GetPatientVisitsAsync(
         CancellationToken cancellationToken = default)
     {
-        var visits = await _repository.GetPatientVisitsAsync(cancellationToken);
-        return ToListItems(visits);
+        var canViewPatientPersonalData = _permissionService is not null
+            && await _permissionService.CanCurrentUserViewPatientPersonalDataAsync("Hasta ziyaretleri", cancellationToken);
+        var visits = await _repository.GetPatientVisitsAsync(canViewPatientPersonalData, cancellationToken);
+        return ToListItems(visits, canViewPatientPersonalData);
     }
 
     public async Task<IReadOnlyCollection<PatientVisitListItemDto>> GetPatientVisitsByDoctorAsync(
         int doctorId,
         CancellationToken cancellationToken = default)
     {
-        var visits = await _repository.GetPatientVisitsByDoctorAsync(doctorId, cancellationToken);
-        return ToListItems(visits);
+        var canViewPatientPersonalData = _permissionService is not null
+            && await _permissionService.CanCurrentUserViewPatientPersonalDataAsync(
+                "Doktor hasta ziyaretleri",
+                cancellationToken);
+        var visits = await _repository.GetPatientVisitsByDoctorAsync(
+            doctorId,
+            canViewPatientPersonalData,
+            cancellationToken);
+        return ToListItems(visits, canViewPatientPersonalData);
     }
 
-    private static PatientVisitListItemDto[] ToListItems(IEnumerable<PatientVisit> visits)
+    private static PatientVisitListItemDto[] ToListItems(
+        IEnumerable<PatientVisit> visits,
+        bool includePatientPersonalData)
     {
         return visits
             .OrderByDescending(visit => visit.ExaminedAtUtc)
             .ThenByDescending(visit => visit.Id)
-            .Select(ToListItem)
+            .Select(visit => ToListItem(visit, includePatientPersonalData))
             .ToArray();
     }
 
-    private static PatientVisitListItemDto ToListItem(PatientVisit visit)
+    private static PatientVisitListItemDto ToListItem(PatientVisit visit, bool includePatientPersonalData)
     {
-        var patientName = FormatPatientName(visit.Patient);
+        var patientName = includePatientPersonalData
+            ? FormatPatientName(visit.Patient, visit.PatientId)
+            : FormatPatientReference(visit.PatientId);
         var latestInvitation = visit.Invitations
             .OrderByDescending(invitation => invitation.CreatedAtUtc)
             .ThenByDescending(invitation => invitation.Id)
@@ -50,9 +65,9 @@ public sealed class PatientVisitService
             visit.Id,
             visit.PatientId,
             patientName,
-            MaskPatientName(visit.Patient),
-            Normalize(visit.Patient?.PhoneNumber),
-            Normalize(visit.Patient?.Email),
+            includePatientPersonalData ? MaskPatientName(visit.Patient, visit.PatientId) : FormatPatientReference(visit.PatientId),
+            includePatientPersonalData ? Normalize(visit.Patient?.PhoneNumber) : null,
+            includePatientPersonalData ? Normalize(visit.Patient?.Email) : null,
             visit.DoctorId,
             FormatDoctorName(visit.Doctor),
             visit.DepartmentId,
@@ -68,22 +83,22 @@ public sealed class PatientVisitService
             latestInvitation?.CreatedAtUtc);
     }
 
-    private static string FormatPatientName(Patient? patient)
+    private static string FormatPatientName(Patient? patient, int patientId)
     {
         if (patient is null)
         {
-            return "Hasta bilgisi yok";
+            return FormatPatientReference(patientId);
         }
 
         var fullName = $"{patient.FirstName} {patient.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? "Hasta bilgisi yok" : fullName;
+        return string.IsNullOrWhiteSpace(fullName) ? FormatPatientReference(patientId) : fullName;
     }
 
-    private static string MaskPatientName(Patient? patient)
+    private static string MaskPatientName(Patient? patient, int patientId)
     {
         if (patient is null)
         {
-            return "Hasta ***";
+            return FormatPatientReference(patientId);
         }
 
         var parts = new[] { patient.FirstName, patient.LastName }
@@ -91,7 +106,12 @@ public sealed class PatientVisitService
             .Where(part => !string.IsNullOrWhiteSpace(part))
             .ToArray();
 
-        return parts.Length == 0 ? "Hasta ***" : string.Join(" ", parts);
+        return parts.Length == 0 ? FormatPatientReference(patientId) : string.Join(" ", parts);
+    }
+
+    private static string FormatPatientReference(int patientId)
+    {
+        return patientId > 0 ? $"Hasta #{patientId}" : "Hasta bilgisi yok";
     }
 
     private static string MaskPart(string? value)

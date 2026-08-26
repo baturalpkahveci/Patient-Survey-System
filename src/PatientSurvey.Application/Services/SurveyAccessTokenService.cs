@@ -10,17 +10,24 @@ public sealed class SurveyAccessTokenService
 {
     private readonly ISurveyAccessTokenRepository _repository;
     private readonly IClock _clock;
+    private readonly PermissionService? _permissionService;
 
-    public SurveyAccessTokenService(ISurveyAccessTokenRepository repository, IClock clock)
+    public SurveyAccessTokenService(
+        ISurveyAccessTokenRepository repository,
+        IClock clock,
+        PermissionService? permissionService = null)
     {
         _repository = repository;
         _clock = clock;
+        _permissionService = permissionService;
     }
 
     public async Task<IReadOnlyCollection<SurveyAccessTokenListItemDto>> GetTokensAsync(
         CancellationToken cancellationToken = default)
     {
-        var tokens = await _repository.GetAllTokensWithSurveysAsync(cancellationToken);
+        var canViewPatientPersonalData = _permissionService is not null
+            && await _permissionService.CanCurrentUserViewPatientPersonalDataAsync("Anket linkleri", cancellationToken);
+        var tokens = await _repository.GetAllTokensWithSurveysAsync(canViewPatientPersonalData, cancellationToken);
         return tokens
             .OrderByDescending(token => token.CreatedAtUtc)
             .Select(token => new SurveyAccessTokenListItemDto(
@@ -37,9 +44,17 @@ public sealed class SurveyAccessTokenService
                 token.Survey?.DoctorId,
                 token.Survey?.DepartmentId,
                 token.Survey?.DoctorId is null && token.Survey?.DepartmentId is null,
-                FormatPatientName(token.SurveyInvitation?.PatientVisit?.Patient),
-                NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.PhoneNumber),
-                NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.Email)))
+                canViewPatientPersonalData
+                    ? FormatPatientName(
+                        token.SurveyInvitation?.PatientVisit?.Patient,
+                        token.SurveyInvitation?.PatientVisit?.PatientId ?? 0)
+                    : FormatPatientReference(token.SurveyInvitation?.PatientVisit?.PatientId ?? 0),
+                canViewPatientPersonalData
+                    ? NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.PhoneNumber)
+                    : null,
+                canViewPatientPersonalData
+                    ? NormalizePatientInfo(token.SurveyInvitation?.PatientVisit?.Patient?.Email)
+                    : null))
             .ToArray();
     }
 
@@ -91,15 +106,20 @@ public sealed class SurveyAccessTokenService
             IsGeneralSurvey: survey.DoctorId is null && survey.DepartmentId is null));
     }
 
-    private static string FormatPatientName(Patient? patient)
+    private static string FormatPatientName(Patient? patient, int patientId)
     {
         if (patient is null)
         {
-            return "Anonim";
+            return FormatPatientReference(patientId);
         }
 
         var fullName = $"{patient.FirstName} {patient.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? "Hasta bilgisi yok" : fullName;
+        return string.IsNullOrWhiteSpace(fullName) ? FormatPatientReference(patientId) : fullName;
+    }
+
+    private static string FormatPatientReference(int patientId)
+    {
+        return patientId > 0 ? $"Hasta #{patientId}" : "Anonim";
     }
 
     private static string? NormalizePatientInfo(string? value)

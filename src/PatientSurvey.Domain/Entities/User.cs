@@ -14,4 +14,6 @@ public sealed class User
     public ICollection<PatientVisit> CreatedPatientVisits { get; set; } = new List<PatientVisit>();
     public ICollection<SurveyInvitation> CreatedSurveyInvitations { get; set; } = new List<SurveyInvitation>();
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+    public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
+    public ICollection<UserPermission> GrantedUserPermissions { get; set; } = new List<UserPermission>();
 }

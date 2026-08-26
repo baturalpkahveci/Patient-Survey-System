@@ -14,26 +14,28 @@ internal sealed class PatientVisitReadRepository : IPatientVisitReadRepository
         _repositoryManager = repositoryManager;
     }
 
-    public async Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsAsync(
+        bool includePatientPersonalData,
+        CancellationToken cancellationToken)
     {
-        return await BaseQuery()
+        return await BaseQuery(includePatientPersonalData)
             .ToArrayAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsByDoctorAsync(
         int doctorId,
+        bool includePatientPersonalData,
         CancellationToken cancellationToken)
     {
-        return await BaseQuery()
+        return await BaseQuery(includePatientPersonalData)
             .Where(visit => visit.DoctorId == doctorId)
             .ToArrayAsync(cancellationToken);
     }
 
-    private IQueryable<PatientVisit> BaseQuery()
+    private IQueryable<PatientVisit> BaseQuery(bool includePatientPersonalData)
     {
-        return _repositoryManager.PatientVisits
+        var query = _repositoryManager.PatientVisits
             .FindAll(trackChanges: false)
-            .Include(visit => visit.Patient)
             .Include(visit => visit.Doctor)
             .Include(visit => visit.Department)
             .Include(visit => visit.CreatedByUser)
@@ -41,5 +43,9 @@ internal sealed class PatientVisitReadRepository : IPatientVisitReadRepository
                 .ThenInclude(invitation => invitation.Survey)
             .Include(visit => visit.Invitations)
                 .ThenInclude(invitation => invitation.AccessToken);
+
+        return includePatientPersonalData
+            ? query.Include(visit => visit.Patient)
+            : query;
     }
 }

@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PatientSurvey.Application.Interfaces;
+using PatientSurvey.Application.Security;
 using PatientSurvey.Domain.Entities;
 using PatientSurvey.Domain.Enums;
 
@@ -55,7 +56,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     }
 
     [Fact]
-    public async Task Doctor_patient_visits_masks_patient_identity()
+    public async Task Doctor_patient_visits_without_permission_does_not_show_patient_personal_data()
     {
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Doctor");
@@ -64,17 +65,53 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
-        Assert.Contains("Em*** Ak***", body);
+        Assert.Contains("Hasta #2", body);
         Assert.DoesNotContain("Emre Aktaş", body);
         Assert.DoesNotContain("emre@example.test", body);
         Assert.DoesNotContain("5551002030", body);
     }
 
     [Fact]
-    public async Task Admin_patient_visits_shows_unrestricted_patient_identity()
+    public async Task Doctor_patient_visits_does_not_show_patient_personal_data_even_when_permission_header_is_sent()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Doctor");
+        client.DefaultRequestHeaders.Add(TestAuthHandler.PatientPiiPermissionHeader, "true");
+
+        var response = await client.GetAsync("/Doctor/PatientVisits");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Hasta #2", body);
+        Assert.DoesNotContain("Emre", body);
+        Assert.DoesNotContain("Akta", body);
+        Assert.DoesNotContain("emre@example.test", body);
+        Assert.DoesNotContain("5551002030", body);
+    }
+
+    [Fact]
+    public async Task Admin_patient_visits_without_permission_does_not_show_patient_personal_data()
     {
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Admin");
+
+        var response = await client.GetAsync("/Admin/PatientVisits");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Hasta #2", body);
+        Assert.DoesNotContain("Emre", body);
+        Assert.DoesNotContain("Akta", body);
+        Assert.DoesNotContain("emre@example.test", body);
+        Assert.DoesNotContain("5551002030", body);
+    }
+
+    [Fact]
+    public async Task Admin_patient_visits_with_permission_shows_patient_personal_data()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Admin");
+        client.DefaultRequestHeaders.Add(TestAuthHandler.PatientPiiPermissionHeader, "true");
 
         var response = await client.GetAsync("/Admin/PatientVisits");
 
@@ -87,7 +124,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     }
 
     [Fact]
-    public async Task Manager_patient_visits_shows_unrestricted_patient_identity()
+    public async Task Manager_patient_visits_without_permission_does_not_show_patient_personal_data()
     {
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Manager");
@@ -96,10 +133,11 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
-        Assert.Contains("Emre", body);
-        Assert.Contains("Akta", body);
-        Assert.Contains("emre@example.test", body);
-        Assert.Contains("5551002030", body);
+        Assert.Contains("Hasta #2", body);
+        Assert.DoesNotContain("Emre", body);
+        Assert.DoesNotContain("Akta", body);
+        Assert.DoesNotContain("emre@example.test", body);
+        Assert.DoesNotContain("5551002030", body);
     }
 
     [Fact]
@@ -132,6 +170,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     [InlineData("/Admin/Dashboard")]
     [InlineData("/Admin/Results")]
     [InlineData("/Admin/Users")]
+    [InlineData("/Admin/PatientVisits")]
     public async Task Doctor_role_cannot_access_admin_endpoints(string path)
     {
         var client = _factory.CreateClient();
@@ -220,25 +259,31 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
                 services.AddScoped<IDoctorManagementRepository, EmptyDoctorManagementRepository>();
                 services.AddScoped<IAuditLogRepository, SampleAuditLogRepository>();
                 services.AddScoped<IPatientVisitReadRepository, SamplePatientVisitReadRepository>();
+                services.AddScoped<IPermissionRepository, SamplePermissionRepository>();
             });
         }
     }
 
     private sealed class SamplePatientVisitReadRepository : IPatientVisitReadRepository
     {
-        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsAsync(CancellationToken cancellationToken)
+        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsAsync(
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits());
+            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits(includePatientPersonalData));
         }
 
-        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsByDoctorAsync(int doctorId, CancellationToken cancellationToken)
+        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsByDoctorAsync(
+            int doctorId,
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits()
+            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits(includePatientPersonalData)
                 .Where(visit => visit.DoctorId == doctorId)
                 .ToArray());
         }
 
-        private static PatientVisit[] BuildVisits()
+        private static PatientVisit[] BuildVisits(bool includePatientPersonalData)
         {
             var department = new Department { Id = 1, Name = "Kardiyoloji", IsActive = true };
             var doctor = new Doctor
@@ -258,14 +303,16 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
                 {
                     Id = 7,
                     PatientId = 2,
-                    Patient = new Patient
-                    {
-                        Id = 2,
-                        FirstName = "Emre",
-                        LastName = "Aktaş",
-                        PhoneNumber = "5551002030",
-                        Email = "emre@example.test"
-                    },
+                    Patient = includePatientPersonalData
+                        ? new Patient
+                        {
+                            Id = 2,
+                            FirstName = "Emre",
+                            LastName = "Aktaş",
+                            PhoneNumber = "5551002030",
+                            Email = "emre@example.test"
+                        }
+                        : null,
                     DoctorId = doctor.Id,
                     Doctor = doctor,
                     DepartmentId = department.Id,
@@ -318,6 +365,94 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
                 }
             });
         }
+
+        public void AddAuditLog(AuditLog auditLog)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
+    }
+
+    private sealed class SamplePermissionRepository : IPermissionRepository
+    {
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public SamplePermissionRepository(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public Task<User?> GetUserPermissionProfileAsync(
+            int userId,
+            bool trackChanges,
+            CancellationToken cancellationToken)
+        {
+            var roleName = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
+            var hasPermission = string.Equals(
+                _httpContextAccessor.HttpContext?.Request.Headers[TestAuthHandler.PatientPiiPermissionHeader].ToString(),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+            var permission = new Permission
+            {
+                Id = 1,
+                Name = AppPermissions.CanViewPatientPersonalData,
+                IsActive = true
+            };
+            var user = new User
+            {
+                Id = userId,
+                Username = roleName.ToLowerInvariant(),
+                Role = new Role { Name = roleName },
+                IsActive = true
+            };
+
+            if (hasPermission)
+            {
+                user.UserPermissions.Add(new UserPermission
+                {
+                    UserId = user.Id,
+                    PermissionId = permission.Id,
+                    Permission = permission
+                });
+            }
+
+            return Task.FromResult<User?>(user);
+        }
+
+        public Task<IReadOnlyCollection<Permission>> GetActivePermissionsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Permission>>(new[]
+            {
+                new Permission
+                {
+                    Id = 1,
+                    Name = AppPermissions.CanViewPatientPersonalData,
+                    Description = "Hasta kişisel verilerini görüntüleyebilir.",
+                    IsActive = true
+                }
+            });
+        }
+
+        public Task<Permission?> GetActivePermissionByNameAsync(string permissionName, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Permission?>(new Permission
+            {
+                Id = 1,
+                Name = permissionName,
+                IsActive = true
+            });
+        }
+
+        public void AddUserPermission(UserPermission userPermission)
+        {
+        }
+
+        public void RemoveUserPermission(UserPermission userPermission)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
     }
 
     private sealed class EmptyReportRepository : IManagementReportRepository
@@ -327,12 +462,17 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
             return Task.FromResult<IReadOnlyCollection<Survey>>(Array.Empty<Survey>());
         }
 
-        public Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(CancellationToken cancellationToken)
+        public Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyCollection<SurveyResponse>>(Array.Empty<SurveyResponse>());
         }
 
-        public Task<SurveyResponse?> GetResponseDetailAsync(int responseId, CancellationToken cancellationToken)
+        public Task<SurveyResponse?> GetResponseDetailAsync(
+            int responseId,
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
             return Task.FromResult<SurveyResponse?>(null);
         }
@@ -427,6 +567,7 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     {
         public const string SchemeName = "Test";
         public const string RoleHeader = "X-Test-Role";
+        public const string PatientPiiPermissionHeader = "X-Test-CanViewPatientPii";
 
         public TestAuthHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,

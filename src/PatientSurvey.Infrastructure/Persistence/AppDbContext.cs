@@ -12,6 +12,10 @@ public sealed class AppDbContext : DbContext
     {
         nameof(User.PasswordHash),
         nameof(Patient.TcIdentityLookupHash),
+        nameof(Patient.FirstName),
+        nameof(Patient.LastName),
+        nameof(Patient.PhoneNumber),
+        nameof(Patient.Email),
         nameof(SurveyAccessToken.Token)
     };
 
@@ -37,6 +41,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<SurveyAccessToken> SurveyAccessTokens => Set<SurveyAccessToken>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PatientVisit> PatientVisits => Set<PatientVisit>();
@@ -280,7 +286,9 @@ public sealed class AppDbContext : DbContext
             Role role => role.Name,
             Department department => department.Name,
             Doctor doctor => $"Dr. {doctor.FirstName} {doctor.LastName}".Trim(),
-            Patient patient => $"{patient.FirstName} {patient.LastName}".Trim(),
+            Patient patient => patient.Id > 0 ? $"Hasta #{patient.Id}" : "Hasta",
+            Permission permission => permission.Name,
+            UserPermission userPermission => userPermission.Permission?.Name ?? $"Yetki #{userPermission.PermissionId}",
             Survey survey => survey.Title,
             Question question => question.Text,
             SurveyAccessToken token => $"Anket #{token.SurveyId}",
@@ -299,6 +307,8 @@ public sealed class AppDbContext : DbContext
         {
             nameof(User) => "Kullanıcı",
             nameof(Role) => "Rol",
+            nameof(Permission) => "Yetki",
+            nameof(UserPermission) => "Kullanıcı Yetkisi",
             nameof(Department) => "Bölüm",
             nameof(Doctor) => "Doktor",
             nameof(Patient) => "Hasta",

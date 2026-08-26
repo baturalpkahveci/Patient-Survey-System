@@ -581,7 +581,28 @@ a.summary-tile:hover {
 
 .inline-form {
   display: inline-flex;
+  align-items: center;
   margin: 0;
+}
+
+.permission-toggle-form {
+  gap: 0.85rem;
+  min-width: 220px;
+}
+
+.permission-toggle-form .compact-check {
+  gap: 0.45rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.permission-save-button {
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
+}
+
+.permission-save-button[hidden] {
+  display: none;
 }
 
 .inline-edit-form {

@@ -64,5 +64,11 @@ public sealed class AuditLogServiceTests
         {
             return Task.FromResult(_logs);
         }
+
+        public void AddAuditLog(AuditLog auditLog)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
     }
 }

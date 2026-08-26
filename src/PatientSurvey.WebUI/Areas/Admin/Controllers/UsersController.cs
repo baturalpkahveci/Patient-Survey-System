@@ -13,11 +13,16 @@ public sealed class UsersController : Controller
 {
     private readonly UserService _userService;
     private readonly DoctorService _doctorService;
+    private readonly PermissionService _permissionService;
 
-    public UsersController(UserService userService, DoctorService doctorService)
+    public UsersController(
+        UserService userService,
+        DoctorService doctorService,
+        PermissionService permissionService)
     {
         _userService = userService;
         _doctorService = doctorService;
+        _permissionService = permissionService;
     }
 
     public async Task<IActionResult> Index(
@@ -29,6 +34,7 @@ public sealed class UsersController : Controller
         CancellationToken cancellationToken)
     {
         var roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+        var permissions = await _permissionService.GetPermissionOptionsAsync(cancellationToken);
         var departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken);
         var users = await _userService.GetUsersAsync(cancellationToken);
         var filtered = ApplyFilters(users, roles, search, roleId, status, departmentId).ToArray();
@@ -37,6 +43,7 @@ public sealed class UsersController : Controller
         {
             Users = filtered,
             Roles = roles,
+            Permissions = permissions,
             Departments = departments,
             Search = search,
             RoleId = roleId,
@@ -52,6 +59,7 @@ public sealed class UsersController : Controller
         return View(new CreateUserViewModel
         {
             Roles = await _userService.GetRoleOptionsAsync(cancellationToken),
+            Permissions = await _permissionService.GetPermissionOptionsAsync(cancellationToken),
             Departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken)
         });
     }
@@ -61,6 +69,7 @@ public sealed class UsersController : Controller
     public async Task<IActionResult> Create(CreateUserViewModel viewModel, CancellationToken cancellationToken)
     {
         var roles = await _userService.GetRoleOptionsAsync(cancellationToken);
+        var permissions = await _permissionService.GetPermissionOptionsAsync(cancellationToken);
         var departments = await _doctorService.GetDepartmentOptionsAsync(cancellationToken);
         var selectedRole = viewModel.RoleId.HasValue
             ? roles.FirstOrDefault(role => role.Id == viewModel.RoleId.Value)
@@ -74,6 +83,13 @@ public sealed class UsersController : Controller
 
         if (isDoctor)
         {
+            if (viewModel.CanViewPatientPersonalData)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.CanViewPatientPersonalData),
+                    "Doktor rolüne hasta kişisel verisi görüntüleme yetkisi verilemez.");
+            }
+
             if (string.IsNullOrWhiteSpace(viewModel.DoctorFirstName))
             {
                 ModelState.AddModelError(nameof(viewModel.DoctorFirstName), "Doktor adı zorunludur.");
@@ -93,6 +109,7 @@ public sealed class UsersController : Controller
         if (!ModelState.IsValid)
         {
             viewModel.Roles = roles;
+            viewModel.Permissions = permissions;
             viewModel.Departments = departments;
             return View(viewModel);
         }
@@ -109,8 +126,24 @@ public sealed class UsersController : Controller
         {
             ModelState.AddModelError(string.Empty, result.Message ?? "Kullanıcı oluşturulamadı.");
             viewModel.Roles = roles;
+            viewModel.Permissions = permissions;
             viewModel.Departments = departments;
             return View(viewModel);
+        }
+
+        if (viewModel.CanViewPatientPersonalData)
+        {
+            var permissionResult = await _permissionService.SetCanViewPatientPersonalDataAsync(
+                result.Value,
+                canView: true,
+                GetCurrentUserId(),
+                cancellationToken);
+
+            if (!permissionResult.IsSuccess)
+            {
+                TempData["AdminMessage"] = $"Kullanıcı oluşturuldu fakat yetki kaydedilemedi: {permissionResult.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         if (isDoctor)
@@ -196,6 +229,36 @@ public sealed class UsersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdatePatientPersonalDataPermission(
+        int id,
+        bool canViewPatientPersonalData,
+        string? returnSearch,
+        int? returnRoleId,
+        string? returnStatus,
+        int? returnDepartmentId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _permissionService.SetCanViewPatientPersonalDataAsync(
+            id,
+            canViewPatientPersonalData,
+            GetCurrentUserId(),
+            cancellationToken);
+
+        TempData["AdminMessage"] = result.IsSuccess
+            ? "Hasta kişisel verisi yetkisi güncellendi."
+            : result.Message;
+
+        return RedirectToAction(nameof(Index), new
+        {
+            search = returnSearch,
+            roleId = returnRoleId,
+            status = returnStatus,
+            departmentId = returnDepartmentId
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Toggle(int id, CancellationToken cancellationToken)
     {
         var result = await _userService.ToggleUserStatusAsync(id, cancellationToken);
@@ -251,5 +314,11 @@ public sealed class UsersController : Controller
         }
 
         return filtered;
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(value, out var userId) ? userId : null;
     }
 }

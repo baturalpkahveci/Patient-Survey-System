@@ -138,6 +138,11 @@ public sealed class AppDbContextAuditTests
         Assert.All(auditLogs, log => Assert.DoesNotContain("#0", log.Summary));
         Assert.All(auditLogs, log => Assert.DoesNotContain("#1 #1", log.Summary));
         Assert.All(auditLogs, log => Assert.DoesNotContain("-214748", log.ChangesJson ?? string.Empty));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("Emre", log.Summary));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("Emre", log.ChangesJson ?? string.Empty));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("Aktas", log.ChangesJson ?? string.Empty));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("05551234567", log.ChangesJson ?? string.Empty));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("hasta@example.test", log.ChangesJson ?? string.Empty));
         Assert.Contains(auditLogs, log =>
             log.EntityName == "Hasta Daveti" &&
             log.Summary == "Hasta Daveti: Davet #1 için ekleme işlemi yapıldı.");

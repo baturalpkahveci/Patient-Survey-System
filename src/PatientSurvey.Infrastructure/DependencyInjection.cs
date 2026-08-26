@@ -17,6 +17,7 @@ using AppIPatientVisitReadRepository = PatientSurvey.Application.Interfaces.IPat
 using AppIEmailSender = PatientSurvey.Application.Interfaces.IEmailSender;
 using AppIPatientIdentityProtector = PatientSurvey.Application.Interfaces.IPatientIdentityProtector;
 using AppIPasswordHasher = PatientSurvey.Application.Interfaces.IPasswordHasher;
+using AppIPermissionRepository = PatientSurvey.Application.Interfaces.IPermissionRepository;
 using AppISmsSender = PatientSurvey.Application.Interfaces.ISmsSender;
 using AppISurveyAccessTokenRepository = PatientSurvey.Application.Interfaces.ISurveyAccessTokenRepository;
 using AppISurveyInvitationRepository = PatientSurvey.Application.Interfaces.ISurveyInvitationRepository;
@@ -46,6 +47,9 @@ public static class DependencyInjection
         services.AddScoped<ISurveyResponseRepository>(provider =>
             provider.GetRequiredService<IRepositoryManager>().SurveyResponses);
         services.AddScoped<IRoleRepository>(provider => provider.GetRequiredService<IRepositoryManager>().Roles);
+        services.AddScoped<IPermissionRepository>(provider => provider.GetRequiredService<IRepositoryManager>().Permissions);
+        services.AddScoped<IUserPermissionRepository>(provider =>
+            provider.GetRequiredService<IRepositoryManager>().UserPermissions);
         services.AddScoped<InfraIUserRepository>(provider => provider.GetRequiredService<IRepositoryManager>().Users);
         services.AddScoped<SurveyWorkflowRepository>();
         services.AddScoped<AppIAdminUserRepository, AdminUserRepository>();
@@ -55,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<AppIManagementReportRepository, ManagementReportRepository>();
         services.AddScoped<AppIDoctorManagementRepository, DoctorManagementRepository>();
         services.AddScoped<AppIAuditLogRepository, AuditLogReadRepository>();
+        services.AddScoped<AppIPermissionRepository, PermissionManagementRepository>();
         services.AddScoped<AppIPatientVisitReadRepository, PatientVisitReadRepository>();
         services.AddScoped<AppISurveySubmissionRepository>(provider =>
             provider.GetRequiredService<SurveyWorkflowRepository>());

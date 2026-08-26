@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PatientSurvey.Application.Security;
 using PatientSurvey.Application.Services;
 using PatientSurvey.WebUI.ViewModels.Account;
 
@@ -51,6 +52,11 @@ public sealed class AccountController : Controller
             new(ClaimTypes.Name, result.Value.Username),
             new(ClaimTypes.Role, result.Value.RoleName)
         };
+
+        foreach (var permissionName in result.Value.PermissionNames ?? Array.Empty<string>())
+        {
+            claims.Add(new Claim(AppPermissionClaimTypes.Permission, permissionName));
+        }
 
         if (string.Equals(result.Value.RoleName, "Doctor", StringComparison.OrdinalIgnoreCase))
         {

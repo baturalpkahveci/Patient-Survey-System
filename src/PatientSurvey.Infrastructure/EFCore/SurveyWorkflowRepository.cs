@@ -40,16 +40,25 @@ internal sealed class SurveyWorkflowRepository :
         return _repositoryManager.SurveyAccessTokens.GetTokenWithActiveSurveyAsync(token, cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<SurveyAccessToken>> GetAllTokensWithSurveysAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<SurveyAccessToken>> GetAllTokensWithSurveysAsync(
+        bool includePatientPersonalData,
+        CancellationToken cancellationToken)
     {
-        return await _repositoryManager.SurveyAccessTokens
+        IQueryable<SurveyAccessToken> query = _repositoryManager.SurveyAccessTokens
             .FindAll(trackChanges: false)
             .Include(accessToken => accessToken.Survey)
             .Include(accessToken => accessToken.SurveyResponse)
             .Include(accessToken => accessToken.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.PatientVisit!);
+
+        if (includePatientPersonalData)
+        {
+            query = query.Include(accessToken => accessToken.SurveyInvitation!)
                 .ThenInclude(invitation => invitation.PatientVisit!)
-                    .ThenInclude(visit => visit.Patient)
-            .ToArrayAsync(cancellationToken);
+                .ThenInclude(visit => visit.Patient);
+        }
+
+        return await query.ToArrayAsync(cancellationToken);
     }
 
     public Task<Survey?> GetSurveyByIdAsync(int surveyId, CancellationToken cancellationToken)

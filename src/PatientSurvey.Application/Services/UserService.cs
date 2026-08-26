@@ -1,6 +1,7 @@
 ﻿using PatientSurvey.Application.Common;
 using PatientSurvey.Application.DTOs.User;
 using PatientSurvey.Application.Interfaces;
+using PatientSurvey.Application.Security;
 using PatientSurvey.Domain.Entities;
 
 namespace PatientSurvey.Application.Services;
@@ -43,7 +44,11 @@ public sealed class UserService
         }
 
         return ServiceResult<AuthenticatedUserDto>.Success(
-            new AuthenticatedUserDto(user.Id, user.Username, user.Role.Name));
+            new AuthenticatedUserDto(
+                user.Id,
+                user.Username,
+                user.Role.Name,
+                GetAllowedPermissionNames(user)));
     }
 
     public async Task<IReadOnlyCollection<UserListItemDto>> GetUsersAsync(CancellationToken cancellationToken = default)
@@ -61,7 +66,8 @@ public sealed class UserService
                 user.Doctor?.LastName,
                 user.Doctor?.DepartmentId,
                 user.Doctor?.Department?.Name,
-                user.Doctor?.IsActive))
+                user.Doctor?.IsActive,
+                HasPermission(user, AppPermissions.CanViewPatientPersonalData)))
             .ToArray();
     }
 
@@ -141,5 +147,28 @@ public sealed class UserService
     private static ServiceResult<AuthenticatedUserDto> LoginFailure()
     {
         return ServiceResult<AuthenticatedUserDto>.Failure("invalid_login", "Kullanıcı adı veya şifre hatalı.");
+    }
+
+    private static string[] GetAllowedPermissionNames(User user)
+    {
+        return IsDoctor(user)
+            ? Array.Empty<string>()
+            : user.UserPermissions
+                .Where(userPermission => userPermission.Permission?.IsActive == true)
+                .Select(userPermission => userPermission.Permission!.Name)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name)
+                .ToArray();
+    }
+
+    private static bool HasPermission(User user, string permissionName)
+    {
+        return GetAllowedPermissionNames(user)
+            .Contains(permissionName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDoctor(User user)
+    {
+        return string.Equals(user.Role?.Name, "Doctor", StringComparison.OrdinalIgnoreCase);
     }
 }

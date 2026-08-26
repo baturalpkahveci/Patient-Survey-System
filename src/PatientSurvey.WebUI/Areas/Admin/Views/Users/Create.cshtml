@@ -37,6 +37,18 @@
             <span asp-validation-for="RoleId" class="field-validation"></span>
         </div>
 
+        @if (Model.Permissions.Count > 0)
+        {
+            <div class="form-section" data-permission-fields>
+                <h2>Yetkiler</h2>
+                <label class="check-row">
+                    <input asp-for="CanViewPatientPersonalData" data-patient-pii-permission />
+                    <span>Hasta kişisel verilerini görüntüleyebilir</span>
+                </label>
+                <span asp-validation-for="CanViewPatientPersonalData" class="field-validation"></span>
+            </div>
+        }
+
         <div class="form-section doctor-profile-section @(isDoctorSelected ? null : "is-hidden")" data-doctor-profile-fields>
             <h2>Doktor Bilgileri</h2>
             <div class="field-grid">

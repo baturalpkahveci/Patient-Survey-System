@@ -8,10 +8,12 @@ namespace PatientSurvey.Application.Services;
 public sealed class ReportService
 {
     private readonly IManagementReportRepository _repository;
+    private readonly PermissionService? _permissionService;
 
-    public ReportService(IManagementReportRepository repository)
+    public ReportService(IManagementReportRepository repository, PermissionService? permissionService = null)
     {
         _repository = repository;
+        _permissionService = permissionService;
     }
 
     public async Task<DashboardOverviewDto> GetDashboardOverviewAsync(CancellationToken cancellationToken = default)
@@ -35,10 +37,12 @@ public sealed class ReportService
     public async Task<IReadOnlyCollection<SurveyResponseListItemDto>> GetResultsAsync(
         CancellationToken cancellationToken = default)
     {
-        var responses = await _repository.GetResponsesForResultsAsync(cancellationToken);
+        var canViewPatientPersonalData = _permissionService is not null
+            && await _permissionService.CanCurrentUserViewPatientPersonalDataAsync("Anket sonuçları", cancellationToken);
+        var responses = await _repository.GetResponsesForResultsAsync(canViewPatientPersonalData, cancellationToken);
         return responses
             .OrderByDescending(response => response.SubmittedAtUtc)
-            .Select(ToListItem)
+            .Select(response => ToListItem(response, canViewPatientPersonalData))
             .ToArray();
     }
 
@@ -46,7 +50,9 @@ public sealed class ReportService
         int responseId,
         CancellationToken cancellationToken = default)
     {
-        var response = await _repository.GetResponseDetailAsync(responseId, cancellationToken);
+        var canViewPatientPersonalData = _permissionService is not null
+            && await _permissionService.CanCurrentUserViewPatientPersonalDataAsync("Anket sonucu detayı", cancellationToken);
+        var response = await _repository.GetResponseDetailAsync(responseId, canViewPatientPersonalData, cancellationToken);
         if (response?.Token?.Survey is null || response.Department is null)
         {
             return ServiceResult<SurveyResponseDetailDto>.Failure("response_not_found", "Anket sonucu bulunamadı.");
@@ -66,9 +72,9 @@ public sealed class ReportService
             response.Department.Name,
             response.SubmittedAtUtc,
             answers,
-            FormatPatientName(patient),
-            NormalizePatientInfo(patient?.PhoneNumber),
-            NormalizePatientInfo(patient?.Email),
+            canViewPatientPersonalData ? FormatPatientName(patient, visit?.PatientId ?? 0) : FormatPatientReference(visit?.PatientId ?? 0),
+            canViewPatientPersonalData ? NormalizePatientInfo(patient?.PhoneNumber) : null,
+            canViewPatientPersonalData ? NormalizePatientInfo(patient?.Email) : null,
             response.Token.SurveyInvitationId,
             visit?.ExaminedAtUtc,
             scoreAnswers.Length == 0 ? null : Math.Round(scoreAnswers.Average(), 2)));
@@ -221,7 +227,9 @@ public sealed class ReportService
             lowSurveys);
     }
 
-    private static SurveyResponseListItemDto ToListItem(PatientSurvey.Domain.Entities.SurveyResponse response)
+    private static SurveyResponseListItemDto ToListItem(
+        PatientSurvey.Domain.Entities.SurveyResponse response,
+        bool includePatientPersonalData)
     {
         var scoreAnswers = response.Answers
             .Where(answer => answer.ScoreValue.HasValue)
@@ -240,9 +248,9 @@ public sealed class ReportService
             scoreAnswers.Length == 0 ? null : Math.Round(scoreAnswers.Average(), 2),
             response.Token?.Survey?.DoctorId is null && response.Token?.Survey?.DepartmentId is null,
             response.Token?.Survey?.DoctorId,
-            FormatPatientName(patient),
-            NormalizePatientInfo(patient?.PhoneNumber),
-            NormalizePatientInfo(patient?.Email),
+            includePatientPersonalData ? FormatPatientName(patient, visit?.PatientId ?? 0) : FormatPatientReference(visit?.PatientId ?? 0),
+            includePatientPersonalData ? NormalizePatientInfo(patient?.PhoneNumber) : null,
+            includePatientPersonalData ? NormalizePatientInfo(patient?.Email) : null,
             response.Token?.SurveyInvitationId,
             visit?.ExaminedAtUtc,
             ToAnswerDtos(response));
@@ -302,15 +310,20 @@ public sealed class ReportService
             .ToArray();
     }
 
-    private static string FormatPatientName(PatientSurvey.Domain.Entities.Patient? patient)
+    private static string FormatPatientName(PatientSurvey.Domain.Entities.Patient? patient, int patientId)
     {
         if (patient is null)
         {
-            return "Anonim";
+            return FormatPatientReference(patientId);
         }
 
         var fullName = $"{patient.FirstName} {patient.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? "Hasta bilgisi yok" : fullName;
+        return string.IsNullOrWhiteSpace(fullName) ? FormatPatientReference(patientId) : fullName;
+    }
+
+    private static string FormatPatientReference(int patientId)
+    {
+        return patientId > 0 ? $"Hasta #{patientId}" : "Anonim";
     }
 
     private static string? NormalizePatientInfo(string? value)

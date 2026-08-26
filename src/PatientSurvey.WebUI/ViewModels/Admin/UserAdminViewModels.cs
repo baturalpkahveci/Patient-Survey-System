@@ -8,6 +8,7 @@ public sealed class UserIndexViewModel
 {
     public IReadOnlyCollection<UserListItemDto> Users { get; set; } = Array.Empty<UserListItemDto>();
     public IReadOnlyCollection<RoleOptionDto> Roles { get; set; } = Array.Empty<RoleOptionDto>();
+    public IReadOnlyCollection<PermissionOptionDto> Permissions { get; set; } = Array.Empty<PermissionOptionDto>();
     public IReadOnlyCollection<DepartmentDto> Departments { get; set; } = Array.Empty<DepartmentDto>();
     public string? Search { get; set; }
     public int? RoleId { get; set; }
@@ -32,7 +33,9 @@ public sealed class CreateUserViewModel
 
     public bool IsActive { get; set; } = true;
     public IReadOnlyCollection<RoleOptionDto> Roles { get; set; } = Array.Empty<RoleOptionDto>();
+    public IReadOnlyCollection<PermissionOptionDto> Permissions { get; set; } = Array.Empty<PermissionOptionDto>();
     public IReadOnlyCollection<DepartmentDto> Departments { get; set; } = Array.Empty<DepartmentDto>();
+    public bool CanViewPatientPersonalData { get; set; }
     public string? DoctorFirstName { get; set; }
     public string? DoctorLastName { get; set; }
     public int? DoctorDepartmentId { get; set; }

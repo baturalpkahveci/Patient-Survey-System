@@ -10,4 +10,5 @@ public sealed record UserListItemDto(
     string? DoctorLastName = null,
     int? DoctorDepartmentId = null,
     string? DoctorDepartmentName = null,
-    bool? DoctorIsActive = null);
+    bool? DoctorIsActive = null,
+    bool CanViewPatientPersonalData = false);

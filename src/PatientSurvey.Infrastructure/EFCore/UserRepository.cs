@@ -19,6 +19,8 @@ public sealed class UserRepository :
     {
         return FindByCondition(user => user.Username == username && user.IsActive, trackChanges: false)
             .Include(user => user.Role)
+            .Include(user => user.UserPermissions)
+                .ThenInclude(userPermission => userPermission.Permission)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -28,6 +30,8 @@ public sealed class UserRepository :
             .Include(user => user.Role)
             .Include(user => user.Doctor!)
                 .ThenInclude(doctor => doctor.Department)
+            .Include(user => user.UserPermissions)
+                .ThenInclude(userPermission => userPermission.Permission)
             .OrderBy(user => user.Username);
     }
 
@@ -37,6 +41,8 @@ public sealed class UserRepository :
             .Include(user => user.Role)
             .Include(user => user.Doctor!)
                 .ThenInclude(doctor => doctor.Department)
+            .Include(user => user.UserPermissions)
+                .ThenInclude(userPermission => userPermission.Permission)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

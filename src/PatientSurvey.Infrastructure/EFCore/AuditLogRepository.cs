@@ -10,4 +10,9 @@ internal sealed class AuditLogRepository : RepositoryBase<AuditLog>, IAuditLogRe
         : base(context)
     {
     }
+
+    public void CreateOneAuditLog(AuditLog auditLog)
+    {
+        Create(auditLog);
+    }
 }

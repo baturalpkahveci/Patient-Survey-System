@@ -112,25 +112,54 @@ document.querySelectorAll("[data-department-select]").forEach((departmentSelect)
 
 const userRoleSelect = document.querySelector("[data-user-role-select]");
 const doctorProfileFields = document.querySelector("[data-doctor-profile-fields]");
+const patientPiiPermission = document.querySelector("[data-patient-pii-permission]");
 
 function syncDoctorProfileFields() {
-    if (!userRoleSelect || !doctorProfileFields) {
+    if (!userRoleSelect) {
         return;
     }
 
     const doctorRoleId = userRoleSelect.dataset.doctorRoleId;
     const isDoctor = Boolean(doctorRoleId) && userRoleSelect.value === doctorRoleId;
-    doctorProfileFields.classList.toggle("is-hidden", !isDoctor);
-    doctorProfileFields.querySelectorAll("input, select").forEach((field) => {
-        field.disabled = !isDoctor;
-        if (!isDoctor) {
-            field.value = "";
+
+    if (doctorProfileFields) {
+        doctorProfileFields.classList.toggle("is-hidden", !isDoctor);
+        doctorProfileFields.querySelectorAll("input, select").forEach((field) => {
+            field.disabled = !isDoctor;
+            if (!isDoctor) {
+                field.value = "";
+            }
+        });
+    }
+
+    if (patientPiiPermission) {
+        patientPiiPermission.disabled = isDoctor;
+        if (isDoctor) {
+            patientPiiPermission.checked = false;
         }
-    });
+    }
 }
 
 userRoleSelect?.addEventListener("change", syncDoctorProfileFields);
 syncDoctorProfileFields();
+
+document.querySelectorAll("[data-permission-toggle-form]").forEach((form) => {
+    const checkbox = form.querySelector("[data-permission-toggle-checkbox]");
+    const submitButton = form.querySelector("[data-permission-toggle-submit]");
+    if (!checkbox || !submitButton) {
+        return;
+    }
+
+    const initialChecked = checkbox.dataset.initialChecked === "true";
+    const syncPermissionSubmit = () => {
+        const isChanged = checkbox.checked !== initialChecked;
+        submitButton.hidden = !isChanged;
+        submitButton.disabled = !isChanged;
+    };
+
+    checkbox.addEventListener("change", syncPermissionSubmit);
+    syncPermissionSubmit();
+});
 
 document.querySelectorAll("[data-survey-question-editor]").forEach((editor) => {
     const list = editor.querySelector("[data-survey-question-list]");

@@ -21,4 +21,14 @@ internal sealed class AuditLogReadRepository : AppIAuditLogRepository
             .Include(log => log.User)
             .ToArrayAsync(cancellationToken);
     }
+
+    public void AddAuditLog(AuditLog auditLog)
+    {
+        _repositoryManager.AuditLogs.CreateOneAuditLog(auditLog);
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return _repositoryManager.SaveAsync(cancellationToken);
+    }
 }

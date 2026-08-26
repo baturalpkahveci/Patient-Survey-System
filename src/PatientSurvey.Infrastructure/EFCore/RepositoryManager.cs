@@ -19,6 +19,8 @@ public sealed class RepositoryManager : IRepositoryManager
     private readonly Lazy<IQuestionRepository> _questionRepository;
     private readonly Lazy<ISurveyResponseRepository> _surveyResponseRepository;
     private readonly Lazy<IRoleRepository> _roleRepository;
+    private readonly Lazy<IPermissionRepository> _permissionRepository;
+    private readonly Lazy<IUserPermissionRepository> _userPermissionRepository;
     private readonly Lazy<InfraIUserRepository> _userRepository;
     private readonly Lazy<IDoctorRepository> _doctorRepository;
     private readonly Lazy<IPatientRepository> _patientRepository;
@@ -36,6 +38,8 @@ public sealed class RepositoryManager : IRepositoryManager
         _questionRepository = new Lazy<IQuestionRepository>(() => new QuestionRepository(_context));
         _surveyResponseRepository = new Lazy<ISurveyResponseRepository>(() => new SurveyResponseRepository(_context));
         _roleRepository = new Lazy<IRoleRepository>(() => new RoleRepository(_context));
+        _permissionRepository = new Lazy<IPermissionRepository>(() => new PermissionRepository(_context));
+        _userPermissionRepository = new Lazy<IUserPermissionRepository>(() => new UserPermissionRepository(_context));
         _userRepository = new Lazy<InfraIUserRepository>(() => new UserRepository(_context));
         _doctorRepository = new Lazy<IDoctorRepository>(() => new DoctorRepository(_context));
         _patientRepository = new Lazy<IPatientRepository>(() => new PatientRepository(_context));
@@ -51,6 +55,8 @@ public sealed class RepositoryManager : IRepositoryManager
     public IQuestionRepository Questions => _questionRepository.Value;
     public ISurveyResponseRepository SurveyResponses => _surveyResponseRepository.Value;
     public IRoleRepository Roles => _roleRepository.Value;
+    public IPermissionRepository Permissions => _permissionRepository.Value;
+    public IUserPermissionRepository UserPermissions => _userPermissionRepository.Value;
     public InfraIUserRepository Users => _userRepository.Value;
     public IDoctorRepository Doctors => _doctorRepository.Value;
     public IPatientRepository Patients => _patientRepository.Value;

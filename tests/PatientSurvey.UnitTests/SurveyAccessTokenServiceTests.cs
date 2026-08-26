@@ -38,6 +38,44 @@ public sealed class SurveyAccessTokenServiceTests
     }
 
     [Fact]
+    public async Task GetTokensAsync_without_permission_returns_patient_reference_only()
+    {
+        var repository = new FakeSurveyAccessTokenRepository();
+        repository.Tokens.Add(new SurveyAccessToken
+        {
+            Id = 1,
+            Token = "token",
+            SurveyId = 1,
+            Survey = new Survey { Id = 1, Title = "A" },
+            CreatedAtUtc = Now,
+            SurveyInvitation = new SurveyInvitation
+            {
+                PatientVisit = new PatientVisit
+                {
+                    PatientId = 5,
+                    Patient = new Patient
+                    {
+                        Id = 5,
+                        FirstName = "Emre",
+                        LastName = "Aktaş",
+                        PhoneNumber = "5551002030",
+                        Email = "emre@example.test"
+                    }
+                }
+            }
+        });
+
+        var result = await CreateService(repository).GetTokensAsync();
+
+        var token = Assert.Single(result);
+        Assert.Equal("Hasta #5", token.PatientName);
+        Assert.Null(token.PatientPhone);
+        Assert.Null(token.PatientEmail);
+        Assert.False(repository.IncludePatientPersonalData);
+    }
+
+
+    [Fact]
     public async Task CreateTokenAsync_validates_survey_and_expiration()
     {
         var repository = new FakeSurveyAccessTokenRepository();
@@ -97,9 +135,13 @@ public sealed class SurveyAccessTokenServiceTests
         public List<SurveyAccessToken> AddedTokens { get; } = new();
         public int CollisionCount { get; set; }
         public int TokenExistsCallCount { get; private set; }
+        public bool? IncludePatientPersonalData { get; private set; }
 
-        public Task<IReadOnlyCollection<SurveyAccessToken>> GetAllTokensWithSurveysAsync(CancellationToken cancellationToken)
+        public Task<IReadOnlyCollection<SurveyAccessToken>> GetAllTokensWithSurveysAsync(
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
+            IncludePatientPersonalData = includePatientPersonalData;
             return Task.FromResult<IReadOnlyCollection<SurveyAccessToken>>(Tokens);
         }
 

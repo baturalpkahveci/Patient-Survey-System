@@ -75,6 +75,7 @@
                     <th>Kullanıcı</th>
                     <th>Rol</th>
                     <th>Durum</th>
+                    <th>Hasta PII</th>
                     <th>Doktor Profili</th>
                     <th>İşlem</th>
                 </tr>
@@ -94,6 +95,41 @@
                         </td>
                         <td>@user.RoleName</td>
                         <td>@(user.IsActive ? "Aktif" : "Pasif")</td>
+                        <td>
+                            @if (isDoctor)
+                            {
+                                <span class="table-note">Verilemez</span>
+                            }
+                            else
+                            {
+                                <form asp-action="UpdatePatientPersonalDataPermission"
+                                      asp-route-id="@user.Id"
+                                      method="post"
+                                      class="inline-form permission-toggle-form"
+                                      data-permission-toggle-form>
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnSearch" value="@Model.Search" />
+                                    <input type="hidden" name="returnRoleId" value="@Model.RoleId" />
+                                    <input type="hidden" name="returnStatus" value="@Model.Status" />
+                                    <input type="hidden" name="returnDepartmentId" value="@Model.DepartmentId" />
+                                    <label class="check-row compact-check">
+                                        <input type="checkbox"
+                                               name="canViewPatientPersonalData"
+                                               value="true"
+                                               checked="@user.CanViewPatientPersonalData"
+                                               data-permission-toggle-checkbox
+                                               data-initial-checked="@user.CanViewPatientPersonalData.ToString().ToLowerInvariant()" />
+                                        <span>Görüntüleyebilir</span>
+                                    </label>
+                                    <input type="hidden" name="canViewPatientPersonalData" value="false" />
+                                    <button type="submit"
+                                            class="secondary-button permission-save-button"
+                                            data-permission-toggle-submit
+                                            hidden
+                                            disabled>Kaydet</button>
+                                </form>
+                            }
+                        </td>
                         <td>
                             @if (!isDoctor)
                             {

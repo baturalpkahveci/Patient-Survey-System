@@ -54,6 +54,38 @@ public sealed class ReportServiceTests
     }
 
     [Fact]
+    public async Task GetResultsAsync_without_permission_returns_patient_reference_only()
+    {
+        var repository = new FakeManagementReportRepository();
+        var response = Response(1, "A", "Acil", DateTimeOffset.UtcNow, 4);
+        response.Token!.SurveyInvitation = new SurveyInvitation
+        {
+            PatientVisit = new PatientVisit
+            {
+                PatientId = 8,
+                Patient = new Patient
+                {
+                    Id = 8,
+                    FirstName = "Emre",
+                    LastName = "Aktaş",
+                    PhoneNumber = "5551002030",
+                    Email = "emre@example.test"
+                }
+            }
+        };
+        repository.Responses.Add(response);
+
+        var results = await new ReportService(repository).GetResultsAsync();
+
+        var result = Assert.Single(results);
+        Assert.Equal("Hasta #8", result.PatientName);
+        Assert.Null(result.PatientPhone);
+        Assert.Null(result.PatientEmail);
+        Assert.False(repository.IncludePatientPersonalData);
+    }
+
+
+    [Fact]
     public async Task GetResultDetailAsync_returns_not_found_or_maps_answers_in_display_order()
     {
         var repository = new FakeManagementReportRepository();
@@ -179,19 +211,27 @@ public sealed class ReportServiceTests
         public List<SurveyResponse> Responses { get; } = new();
         public List<Doctor> Doctors { get; } = new();
         public SurveyResponse? ResponseDetail { get; set; }
+        public bool? IncludePatientPersonalData { get; private set; }
 
         public Task<IReadOnlyCollection<Survey>> GetSurveysForDashboardAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyCollection<Survey>>(Surveys);
         }
 
-        public Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(CancellationToken cancellationToken)
+        public Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
+            IncludePatientPersonalData = includePatientPersonalData;
             return Task.FromResult<IReadOnlyCollection<SurveyResponse>>(Responses);
         }
 
-        public Task<SurveyResponse?> GetResponseDetailAsync(int responseId, CancellationToken cancellationToken)
+        public Task<SurveyResponse?> GetResponseDetailAsync(
+            int responseId,
+            bool includePatientPersonalData,
+            CancellationToken cancellationToken)
         {
+            IncludePatientPersonalData = includePatientPersonalData;
             return Task.FromResult(ResponseDetail?.Id == responseId ? ResponseDetail : null);
         }
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PatientSurvey.Application.DTOs.User;
 using PatientSurvey.Application.Interfaces;
+using PatientSurvey.Application.Security;
 using PatientSurvey.Application.Services;
 using PatientSurvey.Domain.Entities;
 using PatientSurvey.WebUI.Areas.Admin.Controllers;
@@ -93,10 +94,90 @@ public sealed class AdminUsersControllerTests
 
         return new UsersController(
             new UserService(new FakeUserRepository(), adminRepository, new FakePasswordHasher()),
-            new DoctorService(doctorRepository))
+            new DoctorService(doctorRepository),
+            new PermissionService(
+                new FakePermissionRepository(adminRepository),
+                new FakeAuditLogRepository(),
+                new FakeCurrentUserContext()))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
+    }
+
+    private sealed class FakePermissionRepository : IPermissionRepository
+    {
+        private readonly FakeAdminUserRepository _adminRepository;
+
+        public FakePermissionRepository(FakeAdminUserRepository adminRepository)
+        {
+            _adminRepository = adminRepository;
+        }
+
+        public Task<User?> GetUserPermissionProfileAsync(
+            int userId,
+            bool trackChanges,
+            CancellationToken cancellationToken)
+        {
+            return _adminRepository.GetUserByIdAsync(userId, cancellationToken);
+        }
+
+        public Task<IReadOnlyCollection<Permission>> GetActivePermissionsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<Permission>>(new[]
+            {
+                new Permission
+                {
+                    Id = 1,
+                    Name = AppPermissions.CanViewPatientPersonalData,
+                    IsActive = true
+                }
+            });
+        }
+
+        public Task<Permission?> GetActivePermissionByNameAsync(string permissionName, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Permission?>(new Permission
+            {
+                Id = 1,
+                Name = permissionName,
+                IsActive = true
+            });
+        }
+
+        public void AddUserPermission(UserPermission userPermission)
+        {
+            var user = _adminRepository.AddedUsers.FirstOrDefault(candidate => candidate.Id == userPermission.UserId);
+            user?.UserPermissions.Add(userPermission);
+        }
+
+        public void RemoveUserPermission(UserPermission userPermission)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
+    }
+
+    private sealed class FakeAuditLogRepository : IAuditLogRepository
+    {
+        public Task<IReadOnlyCollection<AuditLog>> GetAuditLogsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<AuditLog>>(Array.Empty<AuditLog>());
+        }
+
+        public void AddAuditLog(AuditLog auditLog)
+        {
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
+    }
+
+    private sealed class FakeCurrentUserContext : ICurrentUserContext
+    {
+        public int? UserId => 1;
+        public string Username => "admin";
+        public string? Role => "Admin";
+        public string? IpAddress => "127.0.0.1";
+        public string? RequestPath => "/Admin/Users";
     }
 
     private sealed class FakeUserRepository : IUserRepository

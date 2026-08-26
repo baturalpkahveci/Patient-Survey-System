@@ -24,9 +24,11 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<SurveyResponse>> GetResponsesForResultsAsync(
+        bool includePatientPersonalData,
+        CancellationToken cancellationToken)
     {
-        return await _repositoryManager.SurveyResponses
+        IQueryable<SurveyResponse> query = _repositoryManager.SurveyResponses
             .FindAll(trackChanges: false)
             .Include(response => response.Department)
             .Include(response => response.Answers)
@@ -35,14 +37,25 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
                 .ThenInclude(token => token.Survey)
             .Include(response => response.Token!)
                 .ThenInclude(token => token.SurveyInvitation!)
-                    .ThenInclude(invitation => invitation.PatientVisit!)
-                        .ThenInclude(visit => visit.Patient)
-            .ToArrayAsync(cancellationToken);
+                    .ThenInclude(invitation => invitation.PatientVisit!);
+
+        if (includePatientPersonalData)
+        {
+            query = query.Include(response => response.Token!)
+                .ThenInclude(token => token.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.PatientVisit!)
+                .ThenInclude(visit => visit.Patient);
+        }
+
+        return await query.ToArrayAsync(cancellationToken);
     }
 
-    public Task<SurveyResponse?> GetResponseDetailAsync(int responseId, CancellationToken cancellationToken)
+    public Task<SurveyResponse?> GetResponseDetailAsync(
+        int responseId,
+        bool includePatientPersonalData,
+        CancellationToken cancellationToken)
     {
-        return _repositoryManager.SurveyResponses
+        IQueryable<SurveyResponse> query = _repositoryManager.SurveyResponses
             .FindByCondition(response => response.Id == responseId, trackChanges: false)
             .Include(response => response.Department)
             .Include(response => response.Token!)
@@ -50,10 +63,18 @@ internal sealed class ManagementReportRepository : IManagementReportRepository
             .Include(response => response.Token!)
                 .ThenInclude(token => token.SurveyInvitation!)
                     .ThenInclude(invitation => invitation.PatientVisit!)
-                        .ThenInclude(visit => visit.Patient)
             .Include(response => response.Answers)
-                .ThenInclude(answer => answer.Question)
-            .FirstOrDefaultAsync(cancellationToken);
+                .ThenInclude(answer => answer.Question);
+
+        if (includePatientPersonalData)
+        {
+            query = query.Include(response => response.Token!)
+                .ThenInclude(token => token.SurveyInvitation!)
+                .ThenInclude(invitation => invitation.PatientVisit!)
+                .ThenInclude(visit => visit.Patient);
+        }
+
+        return query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<Survey>> GetSurveysForReportsAsync(CancellationToken cancellationToken)

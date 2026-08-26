@@ -10,6 +10,8 @@ public interface IRepositoryManager
     IQuestionRepository Questions { get; }
     ISurveyResponseRepository SurveyResponses { get; }
     IRoleRepository Roles { get; }
+    IPermissionRepository Permissions { get; }
+    IUserPermissionRepository UserPermissions { get; }
     IUserRepository Users { get; }
     IDoctorRepository Doctors { get; }
     IPatientRepository Patients { get; }
