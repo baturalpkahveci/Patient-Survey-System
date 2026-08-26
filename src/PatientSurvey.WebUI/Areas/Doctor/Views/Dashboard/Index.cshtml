@@ -5,16 +5,23 @@
 }
 
 <section class="admin-page">
-    <div class="admin-heading">
-        <div>
+    <div class="admin-heading doctor-dashboard-heading">
+        <div class="heading-copy">
             <h1>Doktor Paneli</h1>
             <p>@Model.DepartmentName bölümü için anket oluşturabilir, hasta daveti gönderebilir ve sonuçları hasta bilgisi görmeden inceleyebilirsiniz.</p>
         </div>
     </div>
 
-    <div class="admin-grid">
+    <div class="stat-grid">
+        <div class="stat-tile"><span>Doktor</span><strong>@Model.DisplayName</strong></div>
+        <div class="stat-tile"><span>Bölüm</span><strong>@Model.DepartmentName</strong></div>
+        <div class="stat-tile"><span>Hasta Ziyareti</span><strong>@Model.PatientVisitCount</strong></div>
+    </div>
+
+    <div class="admin-grid doctor-dashboard-grid">
+        <a class="doctor-primary-card" asp-area="Doctor" asp-controller="Patients" asp-action="Create"><strong>Hasta Kaydı</strong><span>Hazır anketlerden hastaya davet linki oluşturun</span></a>
         <a asp-area="Doctor" asp-controller="Surveys" asp-action="Index"><strong>Anketler</strong><span>Kendi bölümünüz için anket oluşturun ve soru ekleyin</span></a>
-        <a asp-area="Doctor" asp-controller="Patients" asp-action="Create"><strong>Hasta Kaydı</strong><span>Hazır anketlerden hastaya davet linki oluşturun</span></a>
+        <a asp-area="Doctor" asp-controller="PatientVisits" asp-action="Index"><strong>Hasta Ziyaretleri</strong><span>Hasta adları maskeli şekilde ziyaretleri takip edin</span></a>
         <a asp-area="Doctor" asp-controller="Tokens" asp-action="Index"><strong>Linkler</strong><span>Gönderilen anket linklerini tekrar kopyalayın</span></a>
         <a asp-area="Doctor" asp-controller="Results" asp-action="Index"><strong>Sonuçlar</strong><span>Hasta bilgisi olmadan cevapları ve puanları inceleyin</span></a>
     </div>

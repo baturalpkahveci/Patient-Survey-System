@@ -2,13 +2,9 @@ using PatientSurvey.Domain.Enums;
 
 namespace PatientSurvey.Application.DTOs.Survey;
 
-public sealed record CreateSurveyInvitationRequestDto(
+public sealed record CreateSurveyInvitationForVisitRequestDto(
     int SurveyId,
-    string PatientFirstName,
-    string PatientLastName,
-    string TcIdentityNumber,
-    string? PhoneNumber,
-    string? Email,
+    int PatientVisitId,
     SurveyDeliveryMethod DeliveryMethod,
     DateTimeOffset? ExpiresAtUtc,
     int CreatedByUserId,

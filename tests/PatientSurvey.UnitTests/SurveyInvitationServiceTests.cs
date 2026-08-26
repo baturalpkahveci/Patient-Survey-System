@@ -56,6 +56,57 @@ public sealed class SurveyInvitationServiceTests
     }
 
     [Fact]
+    public async Task CreateInvitationAsync_link_only_allows_missing_patient_contact_info()
+    {
+        var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationAsync(ValidRequest(phoneNumber: " ", email: null));
+
+        Assert.True(result.IsSuccess);
+        var patient = Assert.Single(repository.Patients);
+        Assert.Null(patient.PhoneNumber);
+        Assert.Null(patient.Email);
+        Assert.Equal(SurveyDeliveryStatus.LinkCreated, result.Value!.DeliveryStatus);
+    }
+
+    [Fact]
+    public async Task CreateInvitationAsync_sms_requires_phone_number()
+    {
+        var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationAsync(ValidRequest(
+            method: SurveyDeliveryMethod.Sms,
+            phoneNumber: null));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("phone_required", result.ErrorCode);
+        Assert.Empty(repository.Patients);
+        Assert.Empty(repository.Visits);
+        Assert.Empty(repository.Invitations);
+        Assert.Empty(repository.Tokens);
+    }
+
+    [Fact]
+    public async Task CreateInvitationAsync_email_requires_email_address()
+    {
+        var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationAsync(ValidRequest(
+            method: SurveyDeliveryMethod.Email,
+            email: " "));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("email_required", result.ErrorCode);
+        Assert.Empty(repository.Patients);
+        Assert.Empty(repository.Visits);
+        Assert.Empty(repository.Invitations);
+        Assert.Empty(repository.Tokens);
+    }
+
+    [Fact]
     public async Task CreateInvitationAsync_sms_not_configured_keeps_created_link()
     {
         var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
@@ -92,6 +143,116 @@ public sealed class SurveyInvitationServiceTests
     }
 
     [Fact]
+    public async Task CreateInvitationForVisitAsync_creates_invitation_and_token_for_existing_visit()
+    {
+        var survey = new Survey
+        {
+            Id = 10,
+            Title = "Hedefli",
+            IsActive = true,
+            DoctorId = 3,
+            DepartmentId = 4
+        };
+        var repository = FakeInvitationRepository.WithSurvey(survey);
+        repository.Visits.Add(new PatientVisit
+        {
+            Id = 5,
+            PatientId = 7,
+            Patient = new Patient
+            {
+                Id = 7,
+                FirstName = "Ayşe",
+                LastName = "Yılmaz",
+                PhoneNumber = "05551234567",
+                Email = "hasta@example.test"
+            },
+            DoctorId = 3,
+            DepartmentId = 4
+        });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationForVisitAsync(new CreateSurveyInvitationForVisitRequestDto(
+            10,
+            5,
+            SurveyDeliveryMethod.LinkOnly,
+            Now.AddDays(1),
+            1,
+            "https://example.test/Survey/"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(repository.Visits);
+        Assert.Empty(repository.Patients);
+        var invitation = Assert.Single(repository.Invitations);
+        var token = Assert.Single(repository.Tokens);
+        Assert.Equal(5, invitation.PatientVisitId);
+        Assert.Equal(invitation, token.SurveyInvitation);
+        Assert.Equal(7, result.Value!.PatientReference);
+        Assert.Equal(SurveyDeliveryStatus.LinkCreated, result.Value.DeliveryStatus);
+    }
+
+    [Fact]
+    public async Task CreateInvitationForVisitAsync_sms_requires_existing_patient_phone()
+    {
+        var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
+        repository.Visits.Add(new PatientVisit
+        {
+            Id = 5,
+            PatientId = 7,
+            Patient = new Patient { Id = 7, FirstName = "Ayşe", LastName = "Yılmaz" }
+        });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationForVisitAsync(new CreateSurveyInvitationForVisitRequestDto(
+            10,
+            5,
+            SurveyDeliveryMethod.Sms,
+            Now.AddDays(1),
+            1,
+            "https://example.test/Survey/"));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("phone_required", result.ErrorCode);
+        Assert.Empty(repository.Invitations);
+        Assert.Empty(repository.Tokens);
+    }
+
+    [Fact]
+    public async Task CreateInvitationForVisitAsync_rejects_targeted_survey_visit_scope_mismatch()
+    {
+        var survey = new Survey
+        {
+            Id = 10,
+            Title = "Hedefli",
+            IsActive = true,
+            DoctorId = 3,
+            DepartmentId = 4
+        };
+        var repository = FakeInvitationRepository.WithSurvey(survey);
+        repository.Visits.Add(new PatientVisit
+        {
+            Id = 5,
+            PatientId = 7,
+            Patient = new Patient { Id = 7, FirstName = "Ayşe", LastName = "Yılmaz" },
+            DoctorId = 8,
+            DepartmentId = 4
+        });
+        var service = CreateService(repository);
+
+        var result = await service.CreateInvitationForVisitAsync(new CreateSurveyInvitationForVisitRequestDto(
+            10,
+            5,
+            SurveyDeliveryMethod.LinkOnly,
+            Now.AddDays(1),
+            1,
+            "https://example.test/Survey/"));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("visit_scope_mismatch", result.ErrorCode);
+        Assert.Empty(repository.Invitations);
+        Assert.Empty(repository.Tokens);
+    }
+
+    [Fact]
     public async Task CreateInvitationAsync_rejects_invalid_tc_without_persisting_records()
     {
         var repository = FakeInvitationRepository.WithSurvey(new Survey { Id = 10, Title = "Memnuniyet", IsActive = true });
@@ -118,15 +279,17 @@ public sealed class SurveyInvitationServiceTests
     private static CreateSurveyInvitationRequestDto ValidRequest(
         string patientFirstName = "Ayşe",
         string tc = "10000000146",
-        SurveyDeliveryMethod method = SurveyDeliveryMethod.LinkOnly)
+        SurveyDeliveryMethod method = SurveyDeliveryMethod.LinkOnly,
+        string? phoneNumber = "05551234567",
+        string? email = "hasta@example.test")
     {
         return new CreateSurveyInvitationRequestDto(
             10,
             patientFirstName,
             "Yılmaz",
             tc,
-            "05551234567",
-            "hasta@example.test",
+            phoneNumber,
+            email,
             method,
             Now.AddDays(1),
             1,
@@ -162,6 +325,11 @@ public sealed class SurveyInvitationServiceTests
         public Task<Doctor?> GetDoctorByUserIdAsync(int userId, CancellationToken cancellationToken) => Task.FromResult<Doctor?>(null);
         public Task<IReadOnlyCollection<Doctor>> GetActiveDoctorsByDepartmentAsync(int departmentId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Doctor>>(Array.Empty<Doctor>());
         public Task<IReadOnlyCollection<Department>> GetActiveDepartmentsAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Department>>(Array.Empty<Department>());
+
+        public Task<PatientVisit?> GetPatientVisitByIdAsync(int patientVisitId, bool trackChanges, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Visits.FirstOrDefault(visit => visit.Id == patientVisitId));
+        }
 
         public Task<Patient?> GetPatientByTcHashAsync(string tcIdentityLookupHash, CancellationToken cancellationToken)
         {

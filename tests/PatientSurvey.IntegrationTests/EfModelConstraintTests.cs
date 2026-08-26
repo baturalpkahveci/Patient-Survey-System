@@ -72,6 +72,8 @@ public sealed class EfModelConstraintTests
         Assert.Equal(4000, answer.FindProperty(nameof(Answer.TextValue))!.GetMaxLength());
         Assert.Equal(512, user.FindProperty(nameof(User.PasswordHash))!.GetMaxLength());
         Assert.Equal(128, patient.FindProperty(nameof(Patient.TcIdentityLookupHash))!.GetMaxLength());
+        Assert.True(patient.FindProperty(nameof(Patient.PhoneNumber))!.IsNullable);
+        Assert.True(patient.FindProperty(nameof(Patient.Email))!.IsNullable);
         Assert.Equal(typeof(int), question.FindProperty(nameof(Question.Type))!.GetProviderClrType());
         Assert.Equal(1, (int)QuestionType.Score);
     }

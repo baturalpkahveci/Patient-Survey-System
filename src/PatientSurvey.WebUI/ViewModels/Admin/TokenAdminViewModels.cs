@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using PatientSurvey.Application.DTOs.PatientVisit;
 using PatientSurvey.Application.DTOs.Survey;
 using PatientSurvey.Domain.Enums;
 
@@ -23,27 +24,15 @@ public sealed class CreateTokenViewModel
     [Required(ErrorMessage = "Anket seçin.")]
     public int? SurveyId { get; set; }
 
+    [Required(ErrorMessage = "Hasta ziyareti seçin.")]
+    public int? PatientVisitId { get; set; }
+
     [DataType(DataType.DateTime)]
     public DateTimeOffset? ExpiresAtUtc { get; set; }
-
-    [Required(ErrorMessage = "Hasta adı zorunludur.")]
-    public string PatientFirstName { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Hasta soyadı zorunludur.")]
-    public string PatientLastName { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "T.C. Kimlik Numarası zorunludur.")]
-    public string TcIdentityNumber { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Telefon zorunludur.")]
-    public string PhoneNumber { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "E-posta zorunludur.")]
-    [EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
-    public string Email { get; set; } = string.Empty;
 
     public SurveyDeliveryMethod DeliveryMethod { get; set; } = SurveyDeliveryMethod.LinkOnly;
     public CreatedSurveyInvitationDto? CreatedInvitation { get; set; }
     public string SurveyUrlPrefix { get; set; } = string.Empty;
     public IReadOnlyCollection<AdminSurveyListItemDto> Surveys { get; set; } = Array.Empty<AdminSurveyListItemDto>();
+    public IReadOnlyCollection<PatientVisitListItemDto> PatientVisits { get; set; } = Array.Empty<PatientVisitListItemDto>();
 }

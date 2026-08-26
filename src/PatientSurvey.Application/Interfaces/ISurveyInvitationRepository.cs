@@ -10,6 +10,7 @@ public interface ISurveyInvitationRepository
     Task<Doctor?> GetDoctorByUserIdAsync(int userId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Doctor>> GetActiveDoctorsByDepartmentAsync(int departmentId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Department>> GetActiveDepartmentsAsync(CancellationToken cancellationToken);
+    Task<PatientVisit?> GetPatientVisitByIdAsync(int patientVisitId, bool trackChanges, CancellationToken cancellationToken);
     Task<Patient?> GetPatientByTcHashAsync(string tcIdentityLookupHash, CancellationToken cancellationToken);
     Task<bool> TokenExistsAsync(string token, CancellationToken cancellationToken);
     void AddPatient(Patient patient);

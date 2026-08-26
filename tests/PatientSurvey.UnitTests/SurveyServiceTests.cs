@@ -364,6 +364,7 @@ public sealed class SurveyServiceTests
 
         public Task<IReadOnlyCollection<Doctor>> GetActiveDoctorsByDepartmentAsync(int departmentId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Doctor>>(Array.Empty<Doctor>());
         public Task<IReadOnlyCollection<Department>> GetActiveDepartmentsAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<Department>>(Array.Empty<Department>());
+        public Task<PatientVisit?> GetPatientVisitByIdAsync(int patientVisitId, bool trackChanges, CancellationToken cancellationToken) => Task.FromResult<PatientVisit?>(null);
         public Task<Patient?> GetPatientByTcHashAsync(string tcIdentityLookupHash, CancellationToken cancellationToken) => Task.FromResult<Patient?>(null);
         public Task<bool> TokenExistsAsync(string token, CancellationToken cancellationToken) => Task.FromResult(false);
         public void AddPatient(Patient patient) { }

@@ -1,8 +1,9 @@
+@using PatientSurvey.Application.DTOs.PatientVisit
 @using PatientSurvey.Domain.Enums
 @model CreateTokenViewModel
 
 @{
-    ViewData["Title"] = "Yeni Hasta Daveti";
+    ViewData["Title"] = "Yeni Anket Linki";
 }
 
 <section class="admin-page">
@@ -10,7 +11,7 @@
     {
         var createdUrl = $"{Model.SurveyUrlPrefix}{Model.CreatedInvitation.Token}";
         <div class="success-panel">
-            <h1>Başarılı</h1>
+            <h1>Anket Linki Oluşturuldu</h1>
             <div class="copy-row">
                 <input class="copy-input" value="@createdUrl" readonly data-copy-source />
                 <button type="button" class="secondary-button" data-copy-button>Linki Kopyala</button>
@@ -19,11 +20,29 @@
     }
     else
     {
-        <h1>Yeni Hasta Daveti</h1>
+        <div class="admin-heading">
+            <div>
+                <h1>Yeni Anket Linki</h1>
+                <p>Var olan bir hasta ziyaretine SMS, e-posta veya sadece link olarak anket daveti bağlayın.</p>
+            </div>
+            <a class="secondary-button" asp-area="Admin" asp-controller="PatientVisits" asp-action="Create">Yeni Hasta Ziyareti</a>
+        </div>
 
         <form asp-action="Create" method="post" class="admin-form">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="field-block">
+                <label asp-for="PatientVisitId">Hasta ziyareti</label>
+                <select asp-for="PatientVisitId">
+                    <option value="">Ziyaret seçin</option>
+                    @foreach (var visit in Model.PatientVisits)
+                    {
+                        <option value="@visit.Id">@FormatVisitOption(visit)</option>
+                    }
+                </select>
+                <span asp-validation-for="PatientVisitId" class="field-validation"></span>
+            </div>
 
             <div class="field-block">
                 <label asp-for="SurveyId">Anket</label>
@@ -39,37 +58,12 @@
 
             <div class="field-grid">
                 <div class="field-block">
-                    <label asp-for="PatientFirstName">Hasta Adı</label>
-                    <input asp-for="PatientFirstName" />
-                    <span asp-validation-for="PatientFirstName" class="field-validation"></span>
-                </div>
-
-                <div class="field-block">
-                    <label asp-for="PatientLastName">Hasta Soyadı</label>
-                    <input asp-for="PatientLastName" />
-                    <span asp-validation-for="PatientLastName" class="field-validation"></span>
-                </div>
-            </div>
-
-            <div class="field-grid">
-                <div class="field-block">
-                    <label asp-for="TcIdentityNumber">T.C. Kimlik Numarası</label>
-                    <input asp-for="TcIdentityNumber" inputmode="numeric" autocomplete="off" />
-                    <span asp-validation-for="TcIdentityNumber" class="field-validation"></span>
-                </div>
-
-                <div class="field-block">
-                    <label asp-for="PhoneNumber">Telefon</label>
-                    <input asp-for="PhoneNumber" />
-                    <span asp-validation-for="PhoneNumber" class="field-validation"></span>
-                </div>
-            </div>
-
-            <div class="field-grid">
-                <div class="field-block">
-                    <label asp-for="Email">E-posta</label>
-                    <input asp-for="Email" />
-                    <span asp-validation-for="Email" class="field-validation"></span>
+                    <label asp-for="DeliveryMethod">Gönderim yöntemi</label>
+                    <select asp-for="DeliveryMethod">
+                        <option value="@SurveyDeliveryMethod.LinkOnly">Sadece link</option>
+                        <option value="@SurveyDeliveryMethod.Sms">SMS</option>
+                        <option value="@SurveyDeliveryMethod.Email">E-posta</option>
+                    </select>
                 </div>
 
                 <div class="field-block">
@@ -79,19 +73,28 @@
                 </div>
             </div>
 
-            <div class="field-block">
-                <label asp-for="DeliveryMethod">Gönderim Yöntemi</label>
-                <select asp-for="DeliveryMethod">
-                    <option value="@SurveyDeliveryMethod.LinkOnly">Link Only</option>
-                    <option value="@SurveyDeliveryMethod.Sms">SMS</option>
-                    <option value="@SurveyDeliveryMethod.Email">E-posta</option>
-                </select>
-            </div>
-
-            <button type="submit" class="primary-button">Davet Linki Oluştur</button>
+            <button type="submit" class="primary-button">Link Oluştur</button>
         </form>
     }
 </section>
+
+@functions {
+    private static string FormatVisitOption(PatientVisitListItemDto visit)
+    {
+        var contact = FormatContact(visit);
+        var doctor = string.IsNullOrWhiteSpace(visit.DoctorName) ? "Doktor yok" : visit.DoctorName;
+        return $"#{visit.Id} - {visit.PatientName} | {visit.DepartmentName} | {doctor} | {contact}";
+    }
+
+    private static string FormatContact(PatientVisitListItemDto visit)
+    {
+        var parts = new[] { visit.PatientPhone, visit.PatientEmail }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        return parts.Length == 0 ? "İletişim bilgisi yok" : string.Join(" / ", parts);
+    }
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

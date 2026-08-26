@@ -1,0 +1,176 @@
+@using PatientSurvey.Application.DTOs.PatientVisit
+@model PatientSurvey.WebUI.ViewModels.PatientVisit.PatientVisitIndexViewModel
+
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <h1>@Model.PageTitle</h1>
+            <p>@Model.Description</p>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.CreateActionText))
+        {
+            <a class="primary-button" asp-area="@Model.AreaName" asp-controller="@Model.CreateControllerName" asp-action="Create">@Model.CreateActionText</a>
+        }
+    </div>
+
+    <form method="get" class="filter-bar visit-filter-bar">
+        <div class="field-block filter-search">
+            <label for="search">Arama</label>
+            <input id="search" name="search" value="@Model.Search" placeholder="@SearchPlaceholder(Model)" />
+        </div>
+        @if (Model.ShowDepartmentFilter)
+        {
+            <div class="field-block">
+                <label for="departmentId">Bölüm</label>
+                <select id="departmentId" name="departmentId">
+                    <option value="">Tüm bölümler</option>
+                    @foreach (var department in Model.DepartmentOptions)
+                    {
+                        <option value="@department.Value" selected="@(Model.DepartmentId?.ToString() == department.Value)">@department.Text</option>
+                    }
+                </select>
+            </div>
+        }
+        @if (Model.ShowDoctorFilter)
+        {
+            <div class="field-block">
+                <label for="doctorId">Doktor</label>
+                <select id="doctorId" name="doctorId">
+                    <option value="">Tüm doktorlar</option>
+                    @foreach (var doctor in Model.DoctorOptions)
+                    {
+                        <option value="@doctor.Value" selected="@(Model.DoctorId?.ToString() == doctor.Value)">@doctor.Text</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="field-block">
+            <label for="deliveryStatus">Davet</label>
+            <select id="deliveryStatus" name="deliveryStatus">
+                <option value="">Tümü</option>
+                @foreach (var delivery in Model.DeliveryOptions)
+                {
+                    <option value="@delivery.Value" selected="@(Model.DeliveryStatus == delivery.Value)">@delivery.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field-block">
+            <label for="fromDate">Başlangıç</label>
+            <input id="fromDate" name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="toDate">Bitiş</label>
+            <input id="toDate" name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="field-block">
+            <label for="sort">Sıralama</label>
+            <select id="sort" name="sort">
+                <option value="newest" selected="@(Model.Sort == "newest")">En yeni ziyaret</option>
+                <option value="oldest" selected="@(Model.Sort == "oldest")">En eski ziyaret</option>
+                <option value="patient" selected="@(Model.Sort == "patient")">Hasta adına göre</option>
+                @if (Model.ShowDoctorFilter)
+                {
+                    <option value="doctor" selected="@(Model.Sort == "doctor")">Doktora göre</option>
+                }
+                <option value="department" selected="@(Model.Sort == "department")">Bölüme göre</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="primary-button">Filtrele</button>
+            <a class="secondary-button" asp-area="@Model.AreaName" asp-controller="PatientVisits" asp-action="Index">Temizle</a>
+            <span class="filter-summary">@Model.Visits.Count / @Model.TotalCount ziyaret</span>
+        </div>
+    </form>
+
+    <div class="visit-summary-grid">
+        <div class="stat-tile"><span>Gösterilen</span><strong>@Model.Visits.Count</strong></div>
+        <div class="stat-tile"><span>Toplam Ziyaret</span><strong>@Model.TotalCount</strong></div>
+        <div class="stat-tile"><span>Davetli Ziyaret</span><strong>@Model.Visits.Count(visit => visit.InvitationCount > 0)</strong></div>
+    </div>
+
+    @if (Model.Visits.Count == 0)
+    {
+        <p>@Model.EmptyMessage</p>
+    }
+    else
+    {
+        <table class="admin-table compact-table visit-table">
+            <thead>
+                <tr>
+                    <th>Hasta</th>
+                    @if (Model.ShowPatientDetails)
+                    {
+                        <th>İletişim</th>
+                    }
+                    <th>Ziyaret</th>
+                    @if (Model.ShowDoctorFilter)
+                    {
+                        <th>Doktor</th>
+                    }
+                    <th>Bölüm</th>
+                    <th>Davet / Anket</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var visit in Model.Visits)
+                {
+                    <tr>
+                        <td>
+                            <strong>@DisplayPatient(visit, Model.ShowPatientDetails)</strong>
+                            <span class="table-note">Ziyaret #@visit.Id</span>
+                        </td>
+                        @if (Model.ShowPatientDetails)
+                        {
+                            <td>
+                                <span>@(visit.PatientPhone ?? "-")</span>
+                                <span class="table-note">@(visit.PatientEmail ?? "-")</span>
+                            </td>
+                        }
+                        <td>
+                            <strong>@visit.ExaminedAtUtc.ToLocalTime().ToString("g")</strong>
+                            <span class="table-note">Kayıt: @visit.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                        </td>
+                        @if (Model.ShowDoctorFilter)
+                        {
+                            <td>
+                                <strong>@visit.DoctorName</strong>
+                                <span class="table-note">Oluşturan: @visit.CreatedByUsername</span>
+                            </td>
+                        }
+                        <td>@visit.DepartmentName</td>
+                        <td>
+                            <strong>@(visit.LatestSurveyTitle ?? "Anket yok")</strong>
+                            <span class="table-note">@visit.LatestDeliveryStatusLabel</span>
+                            <span class="table-note">@FormatInvitation(visit)</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@functions {
+    private static string SearchPlaceholder(PatientSurvey.WebUI.ViewModels.PatientVisit.PatientVisitIndexViewModel model)
+    {
+        return model.ShowPatientDetails
+            ? "Hasta, doktor, bölüm veya anket"
+            : "Maskeli hasta, bölüm veya anket";
+    }
+
+    private static string DisplayPatient(PatientVisitListItemDto visit, bool showPatientDetails)
+    {
+        return showPatientDetails ? visit.PatientName : visit.MaskedPatientName;
+    }
+
+    private static string FormatInvitation(PatientVisitListItemDto visit)
+    {
+        if (!visit.LatestInvitationId.HasValue)
+        {
+            return $"{visit.InvitationCount} davet";
+        }
+
+        var createdAt = visit.LatestInvitationCreatedAtUtc?.ToLocalTime().ToString("g") ?? "-";
+        return $"{visit.InvitationCount} davet | Son davet #{visit.LatestInvitationId.Value} | {createdAt}";
+    }
+}

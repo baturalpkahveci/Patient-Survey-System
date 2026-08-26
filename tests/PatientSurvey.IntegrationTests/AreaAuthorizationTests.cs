@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PatientSurvey.Application.Interfaces;
 using PatientSurvey.Domain.Entities;
+using PatientSurvey.Domain.Enums;
 
 namespace PatientSurvey.IntegrationTests;
 
@@ -37,6 +38,8 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Sistem Geçmişi", body);
+        Assert.Contains("/Admin/SystemHistory", body);
     }
 
     [Fact]
@@ -49,6 +52,54 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
 
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+    }
+
+    [Fact]
+    public async Task Doctor_patient_visits_masks_patient_identity()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Doctor");
+
+        var response = await client.GetAsync("/Doctor/PatientVisits");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Em*** Ak***", body);
+        Assert.DoesNotContain("Emre Aktaş", body);
+        Assert.DoesNotContain("emre@example.test", body);
+        Assert.DoesNotContain("5551002030", body);
+    }
+
+    [Fact]
+    public async Task Admin_patient_visits_shows_unrestricted_patient_identity()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Admin");
+
+        var response = await client.GetAsync("/Admin/PatientVisits");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Emre", body);
+        Assert.Contains("Akta", body);
+        Assert.Contains("emre@example.test", body);
+        Assert.Contains("5551002030", body);
+    }
+
+    [Fact]
+    public async Task Manager_patient_visits_shows_unrestricted_patient_identity()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, "Manager");
+
+        var response = await client.GetAsync("/Manager/PatientVisits");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Contains("Emre", body);
+        Assert.Contains("Akta", body);
+        Assert.Contains("emre@example.test", body);
+        Assert.Contains("5551002030", body);
     }
 
     [Fact]
@@ -99,16 +150,19 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DepartmentsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.DoctorsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.TokensController), "Admin")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.PatientVisitsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.ResultsController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Admin.Controllers.SystemHistoryController), "Admin")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.DashboardController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.TokensController), "Manager")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.PatientVisitsController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.ResultsController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Manager.Controllers.ReportsController), "Manager")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.DashboardController), "Doctor")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.SurveysController), "Doctor")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.QuestionsController), "Doctor")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.PatientsController), "Doctor")]
+    [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.PatientVisitsController), "Doctor")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.TokensController), "Doctor")]
     [InlineData(typeof(PatientSurvey.WebUI.Areas.Doctor.Controllers.ResultsController), "Doctor")]
     public void Management_controllers_declare_expected_role_boundary(Type controllerType, string expectedRoles)
@@ -165,7 +219,72 @@ public sealed class AreaAuthorizationTests : IClassFixture<AreaAuthorizationTest
                 services.AddScoped<IManagementReportRepository, EmptyReportRepository>();
                 services.AddScoped<IDoctorManagementRepository, EmptyDoctorManagementRepository>();
                 services.AddScoped<IAuditLogRepository, SampleAuditLogRepository>();
+                services.AddScoped<IPatientVisitReadRepository, SamplePatientVisitReadRepository>();
             });
+        }
+    }
+
+    private sealed class SamplePatientVisitReadRepository : IPatientVisitReadRepository
+    {
+        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits());
+        }
+
+        public Task<IReadOnlyCollection<PatientVisit>> GetPatientVisitsByDoctorAsync(int doctorId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyCollection<PatientVisit>>(BuildVisits()
+                .Where(visit => visit.DoctorId == doctorId)
+                .ToArray());
+        }
+
+        private static PatientVisit[] BuildVisits()
+        {
+            var department = new Department { Id = 1, Name = "Kardiyoloji", IsActive = true };
+            var doctor = new Doctor
+            {
+                Id = 1,
+                UserId = 1,
+                FirstName = "Test",
+                LastName = "Doktor",
+                DepartmentId = department.Id,
+                Department = department,
+                IsActive = true
+            };
+
+            return new[]
+            {
+                new PatientVisit
+                {
+                    Id = 7,
+                    PatientId = 2,
+                    Patient = new Patient
+                    {
+                        Id = 2,
+                        FirstName = "Emre",
+                        LastName = "Aktaş",
+                        PhoneNumber = "5551002030",
+                        Email = "emre@example.test"
+                    },
+                    DoctorId = doctor.Id,
+                    Doctor = doctor,
+                    DepartmentId = department.Id,
+                    Department = department,
+                    CreatedByUser = new User { Id = 1, Username = "doctor" },
+                    ExaminedAtUtc = DateTimeOffset.UtcNow.AddHours(-2),
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2),
+                    Invitations =
+                    {
+                        new SurveyInvitation
+                        {
+                            Id = 9,
+                            DeliveryStatus = SurveyDeliveryStatus.LinkCreated,
+                            CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1),
+                            Survey = new Survey { Id = 14, Title = "Kontrol Anketi" }
+                        }
+                    }
+                }
+            };
         }
     }
 

@@ -2,6 +2,14 @@
 
 @{
     ViewData["Title"] = "Admin Paneli";
+    var totalSurveys = Math.Max(Model.Overview.SurveyCount, 0);
+    var activeSurveys = Math.Max(Model.Overview.ActiveSurveyCount, 0);
+    var totalTokens = Math.Max(Model.Overview.TokenCount, 0);
+    var responses = Math.Max(Model.Overview.ResponseCount, 0);
+    var unusedTokens = Math.Max(Model.Overview.UnusedTokenCount, 0);
+    var usedTokens = Math.Max(totalTokens - unusedTokens, 0);
+    var activeSurveyRate = totalSurveys == 0 ? 0 : (int)Math.Round(activeSurveys * 100m / totalSurveys);
+    var responseRate = totalTokens == 0 ? 0 : (int)Math.Round(responses * 100m / totalTokens);
 }
 
 <section class="admin-page">
@@ -11,24 +19,141 @@
             <h1>Admin Paneli</h1>
             <p>Anket kurulumunu, kullanıcıları, linkleri ve sonuçları buradan yönetebilirsin.</p>
         </div>
-        <a class="primary-button" asp-area="Admin" asp-controller="Surveys" asp-action="Create">Yeni Anket</a>
+        <div class="dashboard-actions">
+            <a class="secondary-button" asp-area="Admin" asp-controller="PatientVisits" asp-action="Create">Yeni Hasta Ziyareti</a>
+            <a class="primary-button" asp-area="Admin" asp-controller="Surveys" asp-action="Create">Yeni Anket</a>
+        </div>
     </div>
 
-    <div class="stat-grid">
-        <div class="stat-tile"><span>Anket</span><strong>@Model.Overview.SurveyCount</strong></div>
-        <div class="stat-tile"><span>Aktif Anket</span><strong>@Model.Overview.ActiveSurveyCount</strong></div>
-        <div class="stat-tile"><span>Soru</span><strong>@Model.Overview.QuestionCount</strong></div>
-        <div class="stat-tile"><span>Cevap</span><strong>@Model.Overview.ResponseCount</strong></div>
-        <div class="stat-tile"><span>Link</span><strong>@Model.Overview.TokenCount</strong></div>
-        <div class="stat-tile"><span>Kullanılmamış Link</span><strong>@Model.Overview.UnusedTokenCount</strong></div>
+    <div class="dashboard-summary-grid">
+        <div class="summary-tile summary-primary">
+            <span>Anketler</span>
+            <strong>@Model.Overview.SurveyCount</strong>
+            <small>@Model.Overview.ActiveSurveyCount aktif, @activeSurveyRate% aktiflik</small>
+        </div>
+        <div class="summary-tile">
+            <span>Yanıtlar</span>
+            <strong>@Model.Overview.ResponseCount</strong>
+            <small>@responseRate% link yanıtlandı</small>
+        </div>
+        <div class="summary-tile">
+            <span>Anket Linkleri</span>
+            <strong>@Model.Overview.TokenCount</strong>
+            <small>@unusedTokens bekleyen, @usedTokens kullanılan</small>
+        </div>
+        <div class="summary-tile">
+            <span>Hasta Ziyaretleri</span>
+            <strong>@Model.PatientVisitCount</strong>
+            <small>Ziyaret ve davet kayıtları</small>
+        </div>
+        <div class="summary-tile">
+            <span>Sorular</span>
+            <strong>@Model.Overview.QuestionCount</strong>
+            <small>Anket içerik havuzu</small>
+        </div>
     </div>
 
-    <div class="admin-grid">
-        <a asp-area="Admin" asp-controller="Surveys" asp-action="Index"><strong>Anketler</strong><span>Anket durumlarını ve içeriklerini yönet</span></a>
-        <a asp-area="Admin" asp-controller="Questions" asp-action="Index"><strong>Sorular</strong><span>Puan, metin ve evet/hayır soruları</span></a>
-        <a asp-area="Admin" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Tek kullanımlık hasta bağlantıları</span></a>
-        <a asp-area="Admin" asp-controller="Results" asp-action="Index"><strong>Sonuçlar</strong><span>Gönderilen yanıtları incele</span></a>
-        <a asp-area="Admin" asp-controller="Departments" asp-action="Index"><strong>Bölümler</strong><span>Hizmet birimlerini düzenle</span></a>
-        <a asp-area="Admin" asp-controller="Users" asp-action="Index"><strong>Kullanıcılar</strong><span>Rolleri ve doktor departmanlarını yönet</span></a>
+    <div class="dashboard-layout">
+        <div class="dashboard-panel">
+            <div class="panel-title-row">
+                <div>
+                    <h2>Operasyon Özeti</h2>
+                    <p>Aktif içerik, link kullanımı ve cevap akışı.</p>
+                </div>
+            </div>
+            <div class="metric-list">
+                <div>
+                    <span>Aktif anket oranı</span>
+                    <strong>@activeSurveyRate%</strong>
+                    <progress value="@activeSurveys" max="@(totalSurveys == 0 ? 1 : totalSurveys)"></progress>
+                </div>
+                <div>
+                    <span>Yanıtlanan link oranı</span>
+                    <strong>@responseRate%</strong>
+                    <progress value="@responses" max="@(totalTokens == 0 ? 1 : totalTokens)"></progress>
+                </div>
+                <div>
+                    <span>Bekleyen link</span>
+                    <strong>@unusedTokens</strong>
+                    <progress value="@unusedTokens" max="@(totalTokens == 0 ? 1 : totalTokens)"></progress>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel">
+            <div class="panel-title-row">
+                <div>
+                    <h2>Bugün Öncelik</h2>
+                    <p>Günlük kontrolde en hızlı bakılacak durumlar.</p>
+                </div>
+            </div>
+            <div class="dashboard-priority-list">
+                <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">
+                    <span>@unusedTokens</span>
+                    <strong>Bekleyen linkleri incele</strong>
+                    <small>Yanıtlanmamış veya süresi dolmaya yaklaşan davetleri takip et.</small>
+                </a>
+                <a asp-area="Admin" asp-controller="Results" asp-action="Index">
+                    <span>@responses</span>
+                    <strong>Yeni sonuçları değerlendir</strong>
+                    <small>Hasta yanıtlarını puan ve anket bazında oku.</small>
+                </a>
+                <a asp-area="Admin" asp-controller="SystemHistory" asp-action="Index">
+                    <span>İz</span>
+                    <strong>Sistem geçmişini denetle</strong>
+                    <small>Kullanıcı işlemleri ve veri değişikliklerini kontrol et.</small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <section class="dashboard-nav-card">
+            <div>
+                <span class="eyebrow">İçerik</span>
+                <h2>Anket Yönetimi</h2>
+                <p>Anketleri, soru setlerini ve aktif/pasif durumlarını tek yerden düzenle.</p>
+            </div>
+            <div class="nav-card-actions">
+                <a asp-area="Admin" asp-controller="Surveys" asp-action="Index">Anketler</a>
+                <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
+            </div>
+        </section>
+
+        <section class="dashboard-nav-card">
+            <div>
+                <span class="eyebrow">Organizasyon</span>
+                <h2>Kullanıcı ve Bölümler</h2>
+                <p>Rolleri, doktor profillerini ve bölüm bağlantılarını yönet.</p>
+            </div>
+            <div class="nav-card-actions">
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanıcılar</a>
+                <a asp-area="Admin" asp-controller="Departments" asp-action="Index">Bölümler</a>
+            </div>
+        </section>
+
+        <section class="dashboard-nav-card">
+            <div>
+                <span class="eyebrow">Hasta Akışı</span>
+                <h2>Davet ve Ziyaretler</h2>
+                <p>Hasta davet linklerini ve ziyaret kayıtlarını operasyonel olarak takip et.</p>
+            </div>
+            <div class="nav-card-actions">
+                <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
+                <a asp-area="Admin" asp-controller="PatientVisits" asp-action="Index">Hasta Ziyaretleri</a>
+            </div>
+        </section>
+
+        <section class="dashboard-nav-card">
+            <div>
+                <span class="eyebrow">Analiz</span>
+                <h2>Sonuç ve Denetim</h2>
+                <p>Yanıtları incele, sistem geçmişinden yapılan değişiklikleri doğrula.</p>
+            </div>
+            <div class="nav-card-actions">
+                <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuçlar</a>
+                <a asp-area="Admin" asp-controller="SystemHistory" asp-action="Index">Sistem Geçmişi</a>
+            </div>
+        </section>
     </div>
 </section>

@@ -66,6 +66,7 @@
                 {
                     <a class="@(isManagerArea ? "is-active" : null)" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Özet</a>
                     <a asp-area="Manager" asp-controller="Tokens" asp-action="Index">Anket Linkleri</a>
+                    <a asp-area="Manager" asp-controller="PatientVisits" asp-action="Index">Hasta Ziyaretleri</a>
                     <a asp-area="Manager" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                     <a asp-area="Manager" asp-controller="Reports" asp-action="Index">Raporlar</a>
                 }
@@ -74,6 +75,7 @@
                     <a class="@(isDoctorArea ? "is-active" : null)" asp-area="Doctor" asp-controller="Dashboard" asp-action="Index">Özet</a>
                     <a asp-area="Doctor" asp-controller="Surveys" asp-action="Index">Anketler</a>
                     <a asp-area="Doctor" asp-controller="Patients" asp-action="Create">Hasta Kaydı</a>
+                    <a asp-area="Doctor" asp-controller="PatientVisits" asp-action="Index">Hasta Ziyaretleri</a>
                     <a asp-area="Doctor" asp-controller="Tokens" asp-action="Index">Linkler</a>
                     <a asp-area="Doctor" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                 }
@@ -83,6 +85,7 @@
                     <a asp-area="Admin" asp-controller="Surveys" asp-action="Index">Anketler</a>
                     <a asp-area="Admin" asp-controller="Questions" asp-action="Index">Sorular</a>
                     <a asp-area="Admin" asp-controller="Tokens" asp-action="Index">Linkler</a>
+                    <a asp-area="Admin" asp-controller="PatientVisits" asp-action="Index">Hasta Ziyaretleri</a>
                     <a asp-area="Admin" asp-controller="Results" asp-action="Index">Sonuçlar</a>
                     <a asp-area="Admin" asp-controller="Users" asp-action="Index">Kullanıcılar</a>
                     <a asp-area="Admin" asp-controller="SystemHistory" asp-action="Index">Sistem Geçmişi</a>

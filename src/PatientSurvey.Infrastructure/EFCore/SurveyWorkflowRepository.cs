@@ -87,6 +87,17 @@ internal sealed class SurveyWorkflowRepository :
         return _repositoryManager.Departments.GetActiveDepartmentsAsync(cancellationToken);
     }
 
+    public Task<PatientVisit?> GetPatientVisitByIdAsync(
+        int patientVisitId,
+        bool trackChanges,
+        CancellationToken cancellationToken)
+    {
+        return _repositoryManager.PatientVisits.GetOnePatientVisitByIdAsync(
+            patientVisitId,
+            trackChanges,
+            cancellationToken);
+    }
+
     public Task<Department?> GetDepartmentAsync(int departmentId, CancellationToken cancellationToken)
     {
         return _repositoryManager.Departments.GetOneDepartmentByIdAsync(

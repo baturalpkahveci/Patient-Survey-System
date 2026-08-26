@@ -64,15 +64,28 @@ public sealed class AppDbContext : DbContext
 
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        var generatedKeyLogs = pendingAuditLogs
-            .Where(pending => string.IsNullOrWhiteSpace(pending.AuditLog.EntityId))
+        var logsToRefreshAfterSave = pendingAuditLogs
+            .Where(pending =>
+                pending.State == EntityState.Added ||
+                string.IsNullOrWhiteSpace(pending.AuditLog.EntityId))
             .ToArray();
 
-        if (generatedKeyLogs.Length > 0)
+        if (logsToRefreshAfterSave.Length > 0)
         {
-            foreach (var pending in generatedKeyLogs)
+            foreach (var pending in logsToRefreshAfterSave)
             {
                 pending.AuditLog.EntityId = GetPrimaryKeyValue(pending.Entry);
+                pending.AuditLog.Summary = BuildSummary(
+                    pending.AuditLog.Action,
+                    pending.AuditLog.EntityName,
+                    pending.AuditLog.EntityId,
+                    pending.Entry);
+
+                if (pending.State == EntityState.Added)
+                {
+                    var changes = BuildAddedChangesAfterSave(pending.Entry);
+                    pending.AuditLog.ChangesJson = changes.Count == 0 ? null : JsonSerializer.Serialize(changes);
+                }
             }
 
             _savingAudit = true;
@@ -145,7 +158,8 @@ public sealed class AppDbContext : DbContext
                 ChangesJson = changes.Count == 0 ? null : JsonSerializer.Serialize(changes),
                 IpAddress = currentUser?.IpAddress,
                 RequestPath = currentUser?.RequestPath
-            });
+            },
+            entry.State);
     }
 
     private static Dictionary<string, object?> BuildChanges(EntityEntry entry)
@@ -197,6 +211,26 @@ public sealed class AppDbContext : DbContext
         return changes;
     }
 
+    private static Dictionary<string, object?> BuildAddedChangesAfterSave(EntityEntry entry)
+    {
+        var changes = new Dictionary<string, object?>();
+
+        foreach (var property in entry.Properties)
+        {
+            if (property.Metadata.IsPrimaryKey())
+            {
+                continue;
+            }
+
+            var propertyName = property.Metadata.Name;
+            changes[propertyName] = SensitiveProperties.Contains(propertyName)
+                ? "[gizli]"
+                : NormalizeValue(property.CurrentValue);
+        }
+
+        return changes;
+    }
+
     private static object? NormalizeValue(object? value)
     {
         return value switch
@@ -231,10 +265,11 @@ public sealed class AppDbContext : DbContext
     private static string BuildSummary(string action, string entityName, string? entityId, EntityEntry entry)
     {
         var label = TryGetEntityLabel(entry);
-        var target = string.IsNullOrWhiteSpace(label) ? entityName : $"{entityName}: {label}";
-        return string.IsNullOrWhiteSpace(entityId)
-            ? $"{target} için {action.ToLowerInvariant()} işlemi yapıldı."
-            : $"{target} #{entityId} için {action.ToLowerInvariant()} işlemi yapıldı.";
+        var target = string.IsNullOrWhiteSpace(label)
+            ? string.IsNullOrWhiteSpace(entityId) ? entityName : $"{entityName} #{entityId}"
+            : $"{entityName}: {label}";
+
+        return $"{target} için {action.ToLowerInvariant()} işlemi yapıldı.";
     }
 
     private static string? TryGetEntityLabel(EntityEntry entry)
@@ -279,5 +314,5 @@ public sealed class AppDbContext : DbContext
         };
     }
 
-    private sealed record PendingAuditLog(EntityEntry Entry, AuditLog AuditLog);
+    private sealed record PendingAuditLog(EntityEntry Entry, AuditLog AuditLog, EntityState State);
 }

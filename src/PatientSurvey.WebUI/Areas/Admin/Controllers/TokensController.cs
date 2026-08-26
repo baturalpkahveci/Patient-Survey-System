@@ -14,15 +14,18 @@ public sealed class TokensController : Controller
     private readonly SurveyAccessTokenService _tokenService;
     private readonly SurveyService _surveyService;
     private readonly SurveyInvitationService _invitationService;
+    private readonly PatientVisitService _patientVisitService;
 
     public TokensController(
         SurveyAccessTokenService tokenService,
         SurveyService surveyService,
-        SurveyInvitationService invitationService)
+        SurveyInvitationService invitationService,
+        PatientVisitService patientVisitService)
     {
         _tokenService = tokenService;
         _surveyService = surveyService;
         _invitationService = invitationService;
+        _patientVisitService = patientVisitService;
     }
 
     public async Task<IActionResult> Index(
@@ -61,14 +64,15 @@ public sealed class TokensController : Controller
         });
     }
 
-    public async Task<IActionResult> Create(int? surveyId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(int? surveyId, int? patientVisitId, CancellationToken cancellationToken)
     {
-        return View(new CreateTokenViewModel
+        var viewModel = new CreateTokenViewModel
         {
             SurveyId = surveyId,
-            Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken),
-            SurveyUrlPrefix = GetSurveyUrlPrefix()
-        });
+            PatientVisitId = patientVisitId
+        };
+        await HydrateCreateModelAsync(viewModel, cancellationToken);
+        return View(viewModel);
     }
 
     [HttpPost]
@@ -80,20 +84,21 @@ public sealed class TokensController : Controller
             ModelState.AddModelError(nameof(viewModel.SurveyId), "Anket seçin.");
         }
 
+        if (!viewModel.PatientVisitId.HasValue)
+        {
+            ModelState.AddModelError(nameof(viewModel.PatientVisitId), "Hasta ziyareti seçin.");
+        }
+
         if (!ModelState.IsValid)
         {
             await HydrateCreateModelAsync(viewModel, cancellationToken);
             return View(viewModel);
         }
 
-        var result = await _invitationService.CreateInvitationAsync(
-            new CreateSurveyInvitationRequestDto(
+        var result = await _invitationService.CreateInvitationForVisitAsync(
+            new CreateSurveyInvitationForVisitRequestDto(
                 viewModel.SurveyId!.Value,
-                viewModel.PatientFirstName,
-                viewModel.PatientLastName,
-                viewModel.TcIdentityNumber,
-                viewModel.PhoneNumber,
-                viewModel.Email,
+                viewModel.PatientVisitId!.Value,
                 viewModel.DeliveryMethod,
                 viewModel.ExpiresAtUtc,
                 GetCurrentUserId(),
@@ -108,11 +113,8 @@ public sealed class TokensController : Controller
         }
 
         viewModel.CreatedInvitation = result.Value;
-        viewModel.PatientFirstName = string.Empty;
-        viewModel.PatientLastName = string.Empty;
-        viewModel.TcIdentityNumber = string.Empty;
-        viewModel.PhoneNumber = string.Empty;
-        viewModel.Email = string.Empty;
+        viewModel.SurveyId = null;
+        viewModel.PatientVisitId = null;
         ModelState.Clear();
         await HydrateCreateModelAsync(viewModel, cancellationToken);
         return View(viewModel);
@@ -121,6 +123,7 @@ public sealed class TokensController : Controller
     private async Task HydrateCreateModelAsync(CreateTokenViewModel viewModel, CancellationToken cancellationToken)
     {
         viewModel.Surveys = await _surveyService.GetAdminSurveysAsync(cancellationToken);
+        viewModel.PatientVisits = await _patientVisitService.GetPatientVisitsAsync(cancellationToken);
         viewModel.SurveyUrlPrefix = GetSurveyUrlPrefix();
     }
 

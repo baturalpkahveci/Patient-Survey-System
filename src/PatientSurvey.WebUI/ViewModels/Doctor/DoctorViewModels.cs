@@ -11,6 +11,7 @@ public sealed class DoctorDashboardViewModel
 {
     public string DisplayName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
+    public int PatientVisitCount { get; set; }
 }
 
 public sealed class DoctorSurveyIndexViewModel
@@ -45,12 +46,10 @@ public sealed class DoctorPatientRecordViewModel
     [Required(ErrorMessage = "T.C. Kimlik Numarası zorunludur.")]
     public string TcIdentityNumber { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Telefon zorunludur.")]
-    public string PhoneNumber { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
 
-    [Required(ErrorMessage = "E-posta zorunludur.")]
     [EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     [DataType(DataType.DateTime)]
     public DateTimeOffset? ExpiresAtUtc { get; set; }

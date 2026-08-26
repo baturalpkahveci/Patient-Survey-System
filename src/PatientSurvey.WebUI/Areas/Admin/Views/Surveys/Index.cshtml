@@ -58,7 +58,7 @@
                         <td>@(survey.IsActive ? "Aktif" : "Pasif")</td>
                         <td class="table-actions">
                             <a asp-controller="Questions" asp-action="Create" asp-route-surveyId="@survey.Id">Soru ekle</a>
-                            <a asp-controller="Tokens" asp-action="Create" asp-route-surveyId="@survey.Id">Link üret</a>
+                            <a asp-controller="Tokens" asp-action="Create" asp-route-surveyId="@survey.Id">Ziyarete link üret</a>
                             <form asp-action="Toggle" asp-route-id="@survey.Id" method="post" class="inline-form">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="secondary-button">@(survey.IsActive ? "Pasif yap" : "Aktif yap")</button>

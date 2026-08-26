@@ -7,11 +7,14 @@
 <section class="admin-page">
     <div class="admin-heading">
         <div>
-            <span class="eyebrow">Operasyon ozeti</span>
+            <span class="eyebrow">Operasyon özeti</span>
             <h1>Manager Paneli</h1>
-            <p>Anket linklerini üret, gelen sonuclari takip et ve raporları incele.</p>
+            <p>Anket linklerini üret, gelen sonuçları takip et ve raporları incele.</p>
         </div>
-        <a class="primary-button" asp-area="Manager" asp-controller="Tokens" asp-action="Create">Yeni Link</a>
+        <div class="dashboard-actions">
+            <a class="secondary-button" asp-area="Manager" asp-controller="PatientVisits" asp-action="Index">Hasta Ziyaretleri</a>
+            <a class="primary-button" asp-area="Manager" asp-controller="Tokens" asp-action="Create">Yeni Link</a>
+        </div>
     </div>
 
     <div class="stat-grid">
@@ -21,11 +24,13 @@
         <div class="stat-tile"><span>Cevap</span><strong>@Model.Overview.ResponseCount</strong></div>
         <div class="stat-tile"><span>Link</span><strong>@Model.Overview.TokenCount</strong></div>
         <div class="stat-tile"><span>Kullanılmamış Link</span><strong>@Model.Overview.UnusedTokenCount</strong></div>
+        <div class="stat-tile"><span>Hasta Ziyareti</span><strong>@Model.PatientVisitCount</strong></div>
     </div>
 
     <div class="admin-grid">
         <a asp-area="Manager" asp-controller="Tokens" asp-action="Index"><strong>Anket Linkleri</strong><span>Hazır ve kullanılmış bağlantılar</span></a>
+        <a asp-area="Manager" asp-controller="PatientVisits" asp-action="Index"><strong>Hasta Ziyaretleri</strong><span>Hasta gelişlerini doktor ve bölüme göre izleyin</span></a>
         <a asp-area="Manager" asp-controller="Results" asp-action="Index"><strong>Sonuçlar</strong><span>Gönderilen anket yanıtları</span></a>
-        <a asp-area="Manager" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Ortalama puan ve bölüm kirilimlari</span></a>
+        <a asp-area="Manager" asp-controller="Reports" asp-action="Index"><strong>Raporlar</strong><span>Ortalama puan ve bölüm kırılımları</span></a>
     </div>
 </section>

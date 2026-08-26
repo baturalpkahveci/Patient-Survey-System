@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PatientSurvey.Application.Interfaces;
 using PatientSurvey.Domain.Entities;
+using PatientSurvey.Domain.Enums;
 using PatientSurvey.Infrastructure.Persistence;
 
 namespace PatientSurvey.IntegrationTests;
@@ -92,6 +93,64 @@ public sealed class AppDbContextAuditTests
         Assert.Equal("Bölüm", auditLog.EntityName);
         Assert.Equal("5", auditLog.EntityId);
         Assert.Contains("Acil", auditLog.Summary);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_refreshes_added_related_entities_with_real_foreign_keys()
+    {
+        await using var context = CreateContext();
+        var patient = new Patient
+        {
+            FirstName = "Emre",
+            LastName = "Aktas",
+            TcIdentityLookupHash = "hash",
+            PhoneNumber = "05551234567",
+            Email = "hasta@example.test"
+        };
+        var visit = new PatientVisit
+        {
+            Patient = patient,
+            CreatedByUserId = 42,
+            DoctorId = 1,
+            DepartmentId = 2
+        };
+        var invitation = new SurveyInvitation
+        {
+            SurveyId = 14,
+            PatientVisit = visit,
+            CreatedByUserId = 42,
+            DeliveryMethod = SurveyDeliveryMethod.Sms,
+            DeliveryStatus = SurveyDeliveryStatus.LinkCreated
+        };
+        var token = new SurveyAccessToken
+        {
+            SurveyId = 14,
+            SurveyInvitation = invitation,
+            Token = "secret-token"
+        };
+
+        context.AddRange(patient, visit, invitation, token);
+        await context.SaveChangesAsync();
+
+        var auditLogs = context.AuditLogs.OrderBy(log => log.Id).ToArray();
+
+        Assert.Equal(4, auditLogs.Length);
+        Assert.All(auditLogs, log => Assert.DoesNotContain("#0", log.Summary));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("#1 #1", log.Summary));
+        Assert.All(auditLogs, log => Assert.DoesNotContain("-214748", log.ChangesJson ?? string.Empty));
+        Assert.Contains(auditLogs, log =>
+            log.EntityName == "Hasta Daveti" &&
+            log.Summary == "Hasta Daveti: Davet #1 için ekleme işlemi yapıldı.");
+        Assert.Contains(auditLogs, log =>
+            log.EntityName == "Hasta Kaydı" &&
+            log.ChangesJson!.Contains("\"PatientId\":1", StringComparison.Ordinal));
+        Assert.Contains(auditLogs, log =>
+            log.EntityName == "Hasta Daveti" &&
+            log.ChangesJson!.Contains("\"PatientVisitId\":1", StringComparison.Ordinal));
+        Assert.Contains(auditLogs, log =>
+            log.EntityName == "Anket Linki" &&
+            log.ChangesJson!.Contains("\"SurveyInvitationId\":1", StringComparison.Ordinal) &&
+            !log.ChangesJson.Contains("secret-token", StringComparison.Ordinal));
     }
 
     private static AppDbContext CreateContext()

@@ -152,7 +152,7 @@
         {
             using var document = JsonDocument.Parse(log.ChangesJson);
             return document.RootElement.EnumerateObject()
-                .Select(property => $"{PropertyLabel(property.Name)}: {FormatChangeValue(property.Value)}")
+                .Select(property => $"{PropertyLabel(property.Name)}: {FormatChangeValue(property.Name, property.Value)}")
                 .ToArray();
         }
         catch (JsonException)
@@ -161,20 +161,50 @@
         }
     }
 
-    private static string FormatChangeValue(JsonElement value)
+    private static string FormatChangeValue(string propertyName, JsonElement value)
     {
         if (value.ValueKind == JsonValueKind.Object &&
             value.TryGetProperty("Eski", out var oldValue) &&
             value.TryGetProperty("Yeni", out var newValue))
         {
-            return $"{FormatScalar(oldValue)} → {FormatScalar(newValue)}";
+            return $"{FormatScalar(propertyName, oldValue)} -> {FormatScalar(propertyName, newValue)}";
         }
 
-        return FormatScalar(value);
+        return FormatScalar(propertyName, value);
     }
 
-    private static string FormatScalar(JsonElement value)
+    private static string FormatScalar(string propertyName, JsonElement value)
     {
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number))
+        {
+            return propertyName switch
+            {
+                "DeliveryMethod" => number switch
+                {
+                    1 => "Sadece link",
+                    2 => "SMS",
+                    3 => "E-posta",
+                    _ => number.ToString()
+                },
+                "DeliveryStatus" => number switch
+                {
+                    1 => "Link oluşturuldu",
+                    2 => "Gönderildi",
+                    3 => "Gönderilemedi",
+                    4 => "Yapılandırılmadı",
+                    _ => number.ToString()
+                },
+                "Type" => number switch
+                {
+                    1 => "Puan",
+                    2 => "Metin",
+                    3 => "Evet/Hayır",
+                    _ => number.ToString()
+                },
+                _ => number.ToString()
+            };
+        }
+
         return value.ValueKind switch
         {
             JsonValueKind.Null => "-",

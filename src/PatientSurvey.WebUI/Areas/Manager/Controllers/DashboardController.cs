@@ -10,18 +10,23 @@ namespace PatientSurvey.WebUI.Areas.Manager.Controllers;
 public sealed class DashboardController : Controller
 {
     private readonly ReportService _reportService;
+    private readonly PatientVisitService _patientVisitService;
 
-    public DashboardController(ReportService reportService)
+    public DashboardController(ReportService reportService, PatientVisitService patientVisitService)
     {
         _reportService = reportService;
+        _patientVisitService = patientVisitService;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
+        var visits = await _patientVisitService.GetPatientVisitsAsync(cancellationToken);
+
         return View(new DashboardViewModel
         {
             Overview = await _reportService.GetDashboardOverviewAsync(cancellationToken),
-            AreaName = "Manager"
+            AreaName = "Manager",
+            PatientVisitCount = visits.Count
         });
     }
 }

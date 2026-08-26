@@ -1,7 +1,8 @@
-@model DoctorPatientRecordViewModel
+@using PatientSurvey.Domain.Enums
+@model CreatePatientVisitViewModel
 
 @{
-    ViewData["Title"] = "Hasta Kaydı";
+    ViewData["Title"] = "Yeni Hasta Ziyareti";
 }
 
 <section class="admin-page">
@@ -9,7 +10,7 @@
     {
         var createdUrl = $"{Model.SurveyUrlPrefix}{Model.CreatedInvitation.Token}";
         <div class="success-panel">
-            <h1>Başarılı</h1>
+            <h1>Hasta Ziyareti Oluşturuldu</h1>
             <div class="copy-row">
                 <input class="copy-input" value="@createdUrl" readonly data-copy-source />
                 <button type="button" class="secondary-button" data-copy-button>Linki Kopyala</button>
@@ -20,10 +21,10 @@
     {
         <div class="admin-heading">
             <div>
-                <h1>Hasta Kaydı</h1>
-                <p>@Model.DepartmentName bölümündeki kendi anketleriniz için hasta davet linki oluşturun.</p>
+                <h1>Yeni Hasta Ziyareti</h1>
+                <p>Hasta ziyaretini kaydedin ve seçilen anket için davet linki oluşturun.</p>
             </div>
-            <a class="secondary-button" asp-area="Doctor" asp-controller="Surveys" asp-action="Index">Anketlere Dön</a>
+            <a class="secondary-button" asp-area="Admin" asp-controller="PatientVisits" asp-action="Index">Ziyaretlere Dön</a>
         </div>
 
         <form asp-action="Create" method="post" class="admin-form">
@@ -34,9 +35,9 @@
                 <label asp-for="SurveyId">Anket</label>
                 <select asp-for="SurveyId">
                     <option value="">Anket seçin</option>
-                    @foreach (var survey in Model.Surveys)
+                    @foreach (var survey in Model.Surveys.Where(survey => survey.IsActive))
                     {
-                        <option value="@survey.Id">@survey.Title</option>
+                        <option value="@survey.Id">@survey.Title (@(survey.IsGeneral ? "Genel" : "Hedefli"))</option>
                     }
                 </select>
                 <span asp-validation-for="SurveyId" class="field-validation"></span>
@@ -48,6 +49,7 @@
                     <input asp-for="PatientFirstName" autocomplete="off" />
                     <span asp-validation-for="PatientFirstName" class="field-validation"></span>
                 </div>
+
                 <div class="field-block">
                     <label asp-for="PatientLastName">Hasta soyadı</label>
                     <input asp-for="PatientLastName" autocomplete="off" />
@@ -61,6 +63,7 @@
                     <input asp-for="TcIdentityNumber" inputmode="numeric" autocomplete="off" />
                     <span asp-validation-for="TcIdentityNumber" class="field-validation"></span>
                 </div>
+
                 <div class="field-block">
                     <label asp-for="PhoneNumber">Telefon (opsiyonel)</label>
                     <input asp-for="PhoneNumber" />
@@ -74,6 +77,7 @@
                     <input asp-for="Email" />
                     <span asp-validation-for="Email" class="field-validation"></span>
                 </div>
+
                 <div class="field-block">
                     <label asp-for="ExpiresAtUtc">Son kullanma tarihi</label>
                     <input asp-for="ExpiresAtUtc" type="datetime-local" />
@@ -90,7 +94,7 @@
                 </select>
             </div>
 
-            <button type="submit" class="primary-button">Davet Linki Oluştur</button>
+            <button type="submit" class="primary-button">Hasta Ziyareti Oluştur</button>
         </form>
     }
 </section>
