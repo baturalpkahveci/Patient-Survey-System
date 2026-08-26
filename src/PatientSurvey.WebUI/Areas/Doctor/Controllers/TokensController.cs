@@ -72,7 +72,6 @@ public sealed class TokensController : Controller
             var term = search.Trim();
             filtered = filtered.Where(token =>
                 token.SurveyTitle.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || token.PatientName.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || token.Token.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 

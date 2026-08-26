@@ -336,6 +336,35 @@
   align-items: center;
 }
 
+.inline-copy {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 38px;
+  gap: 0.35rem;
+  align-items: center;
+  max-width: 520px;
+}
+
+.inline-copy-input {
+  min-width: 0;
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--primary-dark);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
 .report-list {
   display: grid;
   gap: 1rem;
